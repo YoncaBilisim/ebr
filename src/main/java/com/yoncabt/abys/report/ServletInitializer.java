@@ -1,4 +1,4 @@
-package com.yoncabt.abys;
+package com.yoncabt.abys.report;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
