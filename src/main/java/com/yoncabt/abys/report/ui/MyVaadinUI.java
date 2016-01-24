@@ -13,6 +13,9 @@ import com.vaadin.ui.Label;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.Window;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  *
@@ -21,13 +24,13 @@ import com.vaadin.ui.Window;
 @SpringUI
 public class MyVaadinUI extends UI {
 
+    @Autowired
+    private TaskExecutor executor;
+
     private MenuBar.Command menuCommand(final Window window) {
-        return new MenuBar.Command() {
-            @Override
-            public void menuSelected(MenuBar.MenuItem selectedItem) {
-                if (!window.isAttached()) {
-                    MyVaadinUI.this.addWindow(window);
-                }
+        return (MenuBar.MenuItem selectedItem) -> {
+            if (!window.isAttached()) {
+                MyVaadinUI.this.addWindow(window);
             }
         };
     }
@@ -39,6 +42,7 @@ public class MyVaadinUI extends UI {
         MenuBar mb = new MenuBar();
 
         hl.addComponent(mb);
+        ((ThreadPoolTaskExecutor)executor).
         setContent(hl);
         addWindow(new Window("Pencere", new Label("s.a")));
     }

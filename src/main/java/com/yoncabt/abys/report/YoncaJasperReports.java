@@ -44,7 +44,7 @@ public class YoncaJasperReports {
     @Autowired
     private ReportLogger reportLogger;
 
-    public InputStream exportToXls(
+    public InputStream exportTo(
             String reportName,
             Map<String, Object> params,
             ReportOutputFormat outputFormat,

@@ -18,4 +18,32 @@ public class ReportResponse {
      * rapor çıktısı. veya urlden de istenebilir
      */
     private byte[] output;
+
+    /**
+     * @return the uuid
+     */
+    public String getUuid() {
+        return uuid;
+    }
+
+    /**
+     * @param uuid the uuid to set
+     */
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    /**
+     * @return the output
+     */
+    public byte[] getOutput() {
+        return output;
+    }
+
+    /**
+     * @param output the output to set
+     */
+    public void setOutput(byte[] output) {
+        this.output = output;
+    }
 }
