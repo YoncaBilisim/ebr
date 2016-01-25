@@ -52,6 +52,8 @@ public class ReportRequest {
 
     private String uuid;
 
+    private String locale;
+
     /**
      * @return the reportParams
      */
@@ -162,5 +164,19 @@ public class ReportRequest {
      */
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    /**
+     * @return the locale
+     */
+    public String getLocale() {
+        return locale;
+    }
+
+    /**
+     * @param locale the locale to set
+     */
+    public void setLocale(String locale) {
+        this.locale = locale;
     }
 }

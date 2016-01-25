@@ -6,6 +6,7 @@
 package com.yoncabt.abys.report;
 
 import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.report.jdbcbridge.YoncaConnection;
 import com.yoncabt.abys.report.logger.NullReportLogger;
 import com.yoncabt.abys.report.logger.ReportLogger;
 import java.io.File;
@@ -13,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -82,16 +82,28 @@ public class YoncaJasperReports {
             String reportName,
             Map<String, Object> params,
             ReportOutputFormat outputFormat,
-            Connection connection,
+            YoncaConnection connection,
+            String locale,
             String uuid) throws JRException, IOException {
 
+        // önce genel parametreleri dolduralım. logo_path falan gibi
+        ABYSConf.INSTANCE.getMap().entrySet().stream().forEach((es) -> {
+            String key = es.getKey();
+            if (key.startsWith("report.params.")) {
+                key = key.substring("report.params.".length());
+                String value = es.getValue();
+                params.put(key, value);
+            }
+        });
+
         File jrxmlFile = getJrxmlFile(reportName);
-        File resourceFile = new File(jrxmlFile.getParentFile(), "messages_tr_TR.properties");
+        //alttaki satır tehlikeli olabilir mi ?
+        File resourceFile = new File(jrxmlFile.getParentFile(), "messages_" + locale + ".properties");
         Properties properties = new Properties();
         try (FileInputStream fis = new FileInputStream(resourceFile)) {
             properties.load(fis);
         }
-        ResourceBundle rb = new ResourceBundle(){
+        ResourceBundle rb = new ResourceBundle() {
 
             @Override
             protected Object handleGetObject(String key) {
@@ -100,13 +112,13 @@ public class YoncaJasperReports {
 
             @Override
             public Enumeration<String> getKeys() {
-                return (Enumeration<String>)((Enumeration<?>)properties.keys());
+                return (Enumeration<String>) ((Enumeration<?>) properties.keys());
             }
         };
 
         // FIXME yerelleştime dosyaları buradan okunacak
-         params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
-         params.put(JRParameter.REPORT_LOCALE, new Locale("tr_TR"));
+        params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
+        params.put(JRParameter.REPORT_LOCALE, new Locale("tr_TR"));
 
         JasperPrint jasperPrint = JasperFillManager.fillReport(compileIfRequired(reportName).getAbsolutePath(), params, connection);
 
@@ -160,7 +172,11 @@ public class YoncaJasperReports {
             reportLogger.logReport(uuid, params, outputFormat, fis);
         }
 
-        return new FileInputStream(exportReportFile);
+        try {
+            return new FileInputStream(exportReportFile);
+        } finally {
+            exportReportFile.delete();// bu hile sadece linuxta çalışır :D. linux stream kapatılana kadar dosyayı tutacaktır.
+        }
     }
 
     private synchronized File compileIfRequired(String fileName) throws JRException {
@@ -282,10 +298,10 @@ public class YoncaJasperReports {
             params.put("TITLE_ONE", "Başılk 1");
             params.put("TITLE_TWO", "balık 2");
 
-
             DriverManager.registerDriver(new OracleDriver());
-            Connection con = DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS");
-            try (InputStream exportTo = jasperReports.exportTo("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml", params, ReportOutputFormat.odt, con, "deneme rapor " + System.currentTimeMillis());
+            YoncaConnection con = new YoncaConnection(
+                    DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS"));
+            try (InputStream exportTo = jasperReports.exportTo("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml", params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis());
                     FileOutputStream fos = new FileOutputStream("/tmp/rapor1")) {
                 IOUtils.copy(exportTo, fos);
             }

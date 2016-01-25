@@ -15,7 +15,6 @@ import com.vaadin.ui.UI;
 import com.vaadin.ui.Window;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  *
@@ -42,7 +41,7 @@ public class MyVaadinUI extends UI {
         MenuBar mb = new MenuBar();
 
         hl.addComponent(mb);
-        ((ThreadPoolTaskExecutor)executor).
+        //((ThreadPoolTaskExecutor)executor).
         setContent(hl);
         addWindow(new Window("Pencere", new Label("s.a")));
     }

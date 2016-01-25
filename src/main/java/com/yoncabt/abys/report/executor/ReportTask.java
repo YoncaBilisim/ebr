@@ -9,10 +9,10 @@ import com.yoncabt.abys.report.ReportOutputFormat;
 import com.yoncabt.abys.report.ReportRequest;
 import com.yoncabt.abys.report.ReportResponse;
 import com.yoncabt.abys.report.YoncaJasperReports;
+import com.yoncabt.abys.report.jdbcbridge.YoncaConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 import net.sf.jasperreports.engine.JRException;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,18 +36,25 @@ public class ReportTask implements Runnable {
 
     private Exception exception;
 
+    private YoncaConnection connection;
+
+    private long started;
+
+    private long ended;
+
     @Override
     public void run() {
+        started = System.currentTimeMillis();
         response = new ReportResponse();
         response.setUuid(request.getUuid());
-        Connection con = null;
-        try (InputStream is = jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), con, request.getUuid());){
+        try (InputStream is = jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             IOUtils.copy(is, baos);
             response.setOutput(baos.toByteArray());//burası rai doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
         } catch (JRException | IOException ex) {
             exception = ex;
         }
+        ended = System.currentTimeMillis();
     }
 
     public ReportRequest getRequest() {
@@ -67,5 +74,9 @@ public class ReportTask implements Runnable {
 
     public ReportResponse getResponse() {
         return response;
+    }
+
+    public YoncaConnection getYoncaConnection() {
+        return connection;
     }
 }

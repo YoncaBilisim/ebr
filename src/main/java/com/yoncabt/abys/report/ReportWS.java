@@ -6,6 +6,7 @@
 package com.yoncabt.abys.report;
 
 import com.yoncabt.abys.report.executor.ReportTask;
+import com.yoncabt.abys.report.executor.ReportList;
 import java.util.UUID;
 import javax.ws.rs.Path;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,12 +32,16 @@ public class ReportWS {
     @Autowired
     private TaskExecutor executor;
 
+    @Autowired
+    private ReportList requestList;
+
     @RequestMapping(value = {
         "/request"
     }, method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<ReportResponse> request(ReportRequest req) {
         ReportTask task = context.getBean(ReportTask.class);
         req.setUuid(UUID.randomUUID().toString());
+        requestList.add(task);
         if (req.isAsync()) {
             task.setRequest(req);
             executor.execute(task);
@@ -46,7 +51,7 @@ public class ReportWS {
         } else {
             //hemen çalışacak olanlar buraya
             task.run();
-            return ResponseEntity.status(HttpStatus.PROCESSING).body(task.getResponse());
+            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
         }
     }
 }
