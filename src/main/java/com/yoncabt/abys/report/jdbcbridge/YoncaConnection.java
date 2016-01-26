@@ -27,7 +27,7 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
- *
+ * bunu çalışan raporu kapatabilmek için kullanacağım.
  * @author myururdurmaz
  */
 public class YoncaConnection implements Connection {

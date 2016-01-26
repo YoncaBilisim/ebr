@@ -13,7 +13,10 @@ import com.yoncabt.abys.report.jdbcbridge.YoncaConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import javax.mail.MessagingException;
 import net.sf.jasperreports.engine.JRException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -29,6 +32,9 @@ public class ReportTask implements Runnable {
 
     @Autowired
     private YoncaJasperReports jasperReports;
+
+    @Autowired
+    private YoncaMailSender mailSender;
 
     private ReportRequest request;
 
@@ -50,8 +56,11 @@ public class ReportTask implements Runnable {
         try (InputStream is = jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             IOUtils.copy(is, baos);
-            response.setOutput(baos.toByteArray());//burası rai doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
-        } catch (JRException | IOException ex) {
+            response.setOutput(baos.toByteArray());//burası RAMi doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
+            if(!StringUtils.isBlank(request.getEmail())) {
+                mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
+            }
+        } catch (JRException | IOException | MessagingException ex) {
             exception = ex;
         }
         ended = System.currentTimeMillis();
@@ -78,5 +87,13 @@ public class ReportTask implements Runnable {
 
     public YoncaConnection getYoncaConnection() {
         return connection;
+    }
+
+    public long getStarted() {
+        return started;
+    }
+
+    public long getEnded() {
+        return ended;
     }
 }
