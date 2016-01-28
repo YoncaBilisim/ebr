@@ -7,7 +7,7 @@ package com.yoncabt.abys.report;
 
 import com.yoncabt.abys.core.util.ABYSConf;
 import com.yoncabt.abys.report.jdbcbridge.YoncaConnection;
-import com.yoncabt.abys.report.logger.NullReportLogger;
+import com.yoncabt.abys.report.logger.fs.FileSystemReportLogger;
 import com.yoncabt.abys.report.logger.ReportLogger;
 import java.io.File;
 import java.io.FileInputStream;
@@ -67,12 +67,14 @@ import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import oracle.jdbc.OracleDriver;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  *
  * @author myururdurmaz
  */
 @Singleton
+@Component
 public class YoncaJasperReports {
 
     @Autowired
@@ -95,6 +97,8 @@ public class YoncaJasperReports {
                 params.put(key, value);
             }
         });
+        params.put("__extension", outputFormat.name());
+        params.put("__start_time", System.currentTimeMillis());
 
         File jrxmlFile = getJrxmlFile(reportName);
         //alttaki satır tehlikeli olabilir mi ?
@@ -120,7 +124,10 @@ public class YoncaJasperReports {
         params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
         params.put(JRParameter.REPORT_LOCALE, new Locale("tr_TR"));
 
-        JasperPrint jasperPrint = JasperFillManager.fillReport(compileIfRequired(reportName).getAbsolutePath(), params, connection);
+        JasperPrint jasperPrint = JasperFillManager.fillReport(
+                compileIfRequired(reportName).getAbsolutePath(),
+                /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
+                connection);
 
         Exporter exporter;
         switch (outputFormat) {
@@ -288,7 +295,7 @@ public class YoncaJasperReports {
             System.setProperty("report.out.path", "/tmp");
 
             YoncaJasperReports jasperReports = new YoncaJasperReports();
-            jasperReports.reportLogger = new NullReportLogger();
+            jasperReports.reportLogger = new FileSystemReportLogger();
 
             Map<String, Object> params = new HashMap<>();
             params.put("CORP_NAME", "DENEM A.Ş");

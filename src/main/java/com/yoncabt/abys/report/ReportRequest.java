@@ -10,13 +10,15 @@ import java.util.Map;
 
 /**
  * rapor isteği için request sınıfı
+ *
  * @author myururdurmaz
  */
 public class ReportRequest {
 
     private Map<String, Object> reportParams = new HashMap<>();
     /**
-     * eğer <code>true</code> ise asenkron çalışacakltır. değilse hemen çıktı üretecektir
+     * eğer <code>true</code> ise asenkron çalışacakltır. değilse hemen çıktı
+     * üretecektir
      */
     private boolean async;
     /**
@@ -34,8 +36,8 @@ public class ReportRequest {
      * abys.conf içerisinde<br />
      * <pre>    report.datasource.datasourceName.url=veritabanı urlsi</pre>
      * <pre>    report.datasource.datasourceName.user=veritabanı kullanıcı</pre>
-     * <pre>    report.datasource.datasourceName.pass=veritabanı şifre</pre>
-     * hatta farklı veritabanları da kullanılabilsin
+     * <pre>    report.datasource.datasourceName.pass=veritabanı şifre</pre> hatta
+     * farklı veritabanları da kullanılabilsin
      * <pre>    report.datasource.datasourceName.driver=jdbc driver</pre>
      */
     private String datasourceName;
@@ -179,4 +181,27 @@ public class ReportRequest {
     public void setLocale(String locale) {
         this.locale = locale;
     }
+//
+//    public static void main(String[] args) {
+//        ReportRequest req = new ReportRequest();
+//
+//        System.setProperty("report.jrmxl.path", "/home/myururdurmaz/reports");
+//        System.setProperty("report.jasper.path", "/home/myururdurmaz/reports");
+//        System.setProperty("report.out.path", "/tmp");
+//
+//        Map<String, Object> params = new HashMap<>();
+//        params.put("CORP_NAME", "DENEM A.Ş");
+//        params.put("LANG", 1);
+//        params.put("LOGO_PATH", "/tmp/logo.png");
+//        params.put("OPTIONAL_PARAMETER", " and rownum = 1");
+//        params.put("TITLE_ONE", "Başılk 1");
+//        params.put("TITLE_TWO", "balık 2");
+//        req.getReportParams().putAll(params);
+//        req.setAsync(false);
+//        req.setExtension("pdf");
+//        //req.setLocale("tr_TR");
+//        req.setReport("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml");
+//        JSONObject jo = new JSONObject(req);
+//        System.out.println(jo.toString());
+//    }
 }

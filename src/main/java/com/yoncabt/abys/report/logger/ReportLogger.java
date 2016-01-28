@@ -6,6 +6,7 @@
 package com.yoncabt.abys.report.logger;
 
 import com.yoncabt.abys.report.ReportOutputFormat;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
@@ -14,5 +15,11 @@ import java.util.Map;
  * @author myururdurmaz
  */
 public interface ReportLogger {
-    void logReport(String uuid, Map<String, Object> reportParams, ReportOutputFormat outputFormat, InputStream reportData);
+
+    void logReport(String uuid,
+            Map<String, Object> reportParams,
+            ReportOutputFormat outputFormat,
+            InputStream reportData) throws IOException;
+
+    byte[] getReportData(String uuid) throws IOException;
 }

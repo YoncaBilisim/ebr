@@ -11,12 +11,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Singleton;
+import org.springframework.stereotype.Component;
 
 /**
  *
  * @author myururdurmaz
  */
 @Singleton
+@Component
 public class ReportList {
 
     private List<ReportTask> requestList = new ArrayList<>();
