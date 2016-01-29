@@ -7,6 +7,12 @@ package com.yoncabt.abys.core.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,22 +36,27 @@ public enum ABYSConf {
 
     private long lastModified = 0;
 
+    private Connection connection;
+
+    private String tableName;
+    private String tableKeyColumn;
+    private String tableValueColumn;
+
     private ABYSConf() {
         reloadLock = new Object();
         reload();
     }
 
     private void reload() {
+        // 2 defa çalışmasın burası
         synchronized (reloadLock) {
             File confFile = getConfFile();
             Map<String, String> tmp = new HashMap<>();
             if (confFile.exists() && confFile.isFile() && confFile.canRead()) {
                 lastModified = confFile.lastModified();
-                //System.out.println(confFile.getAbsolutePath() + ": okunuyor");
                 try {
                     List<String> lines = FileUtils.readLines(confFile, "utf-8");
                     for (String line : lines) {
-                        //System.out.println("ABYSConf:" + line);
                         if (StringUtils.isBlank(line) || line.trim().charAt(0) == '#') {
                             continue;
                         }
@@ -63,6 +74,7 @@ public enum ABYSConf {
             } else {
                 //System.out.println(confFile.getAbsolutePath() + ": OKUNMUYOR");
             }
+            reconnectToDb(tmp);
             map = tmp;
             for (Map.Entry<String, String> entrySet : map.entrySet()) {
                 String key = entrySet.getKey();
@@ -70,6 +82,28 @@ public enum ABYSConf {
                 if (key.startsWith("system.")) {
                     System.setProperty(key.substring("system.".length()), value);
                 }
+            }
+        }
+    }
+
+    /**
+     * veritabanına tekrar bağlanır
+     *
+     * @param tmp bilgilerin okunacağı map
+     */
+    private void reconnectToDb(Map<String, String> tmp) {
+        if (tmp.containsKey("abysconf.connection.url")) {
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+                DriverManager.registerDriver((Driver) Class.forName(tmp.get("abysconf.connection.driver")).newInstance());
+                connection = DriverManager.getConnection(tmp.get("abysconf.connection.url"), tmp.get("abysconf.connection.user"), tmp.get("abysconf.connection.pass"));
+                tableName = tmp.get("abysconf.connection.tableName");
+                tableKeyColumn = tmp.get("abysconf.connection.tableKeyColumn");
+                tableValueColumn = tmp.get("abysconf.connection.tableValueColumn");
+            } catch (SQLException | ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+                Logger.getLogger(ABYSConf.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -88,43 +122,81 @@ public enum ABYSConf {
     }
 
     public String getValue(String key, String defaultValue) {
-        reloadIfRequired();
-        if (map.containsKey(key)) {
-            return map.get(key);
-        }
-        return System.getProperty(key, defaultValue);
+        return getValueFromAll(key, defaultValue);
     }
 
     public boolean getValue(String key, boolean defaultValue) {
-        reloadIfRequired();
-        if (map.containsKey(key)) {
-            return Boolean.valueOf(map.get(key));
-        }
-        return Boolean.valueOf(System.getProperty(key, Boolean.toString(defaultValue)));
+        return Boolean.valueOf(getValueFromAll(key, Boolean.toString(defaultValue)));
     }
 
     public double getValue(String key, double defaultValue) {
-        reloadIfRequired();
-        if (map.containsKey(key)) {
-            return Double.valueOf(map.get(key));
-        }
-        return Double.valueOf(System.getProperty(key, Double.toString(defaultValue)));
+        return Double.valueOf(getValueFromAll(key, Double.toString(defaultValue)));
     }
 
     public int getValue(String key, int defaultValue) {
-        reloadIfRequired();
-        if (map.containsKey(key)) {
-            return Integer.valueOf(map.get(key));
-        }
-        return Integer.valueOf(System.getProperty(key, Integer.toString(defaultValue)));
+        return Integer.valueOf(getValueFromAll(key, Integer.toString(defaultValue)));
     }
 
     public long getValue(String key, long defaultValue) {
+        return Integer.valueOf(getValueFromAll(key, Long.toString(defaultValue)));
+    }
+
+    /**
+     * önce sistem pproperty denenir, yoksa abys.conf, o da yoksa veritabanından
+     * denenir
+     *
+     * @param key
+     * @param defaultValue
+     * @return
+     */
+    private String getValueFromAll(String key, String defaultValue) {
         reloadIfRequired();
-        if (map.containsKey(key)) {
-            return Long.valueOf(map.get(key));
+        try {
+            return getValueFromSystem(key);
+        } catch (ValueNotFoundException ex) {
+            try {
+                return getValueFromMap(key);
+            } catch (ValueNotFoundException ex1) {
+                try {
+                    return getValueFromDB(key);
+                } catch (SQLException sqle) {
+                    Logger.getLogger(ABYSConf.class.getName()).log(Level.SEVERE, null, sqle);
+                    //ne kadar hoşuma gitmse de burda değeri döneceğim
+                    return defaultValue;
+                } catch (ValueNotFoundException ex2) {
+                    return defaultValue;
+                }
+            }
         }
-        return Integer.valueOf(System.getProperty(key, Long.toString(defaultValue)));
+    }
+
+    private String getValueFromSystem(String key) throws ValueNotFoundException {
+        if (System.getProperties().containsKey(key)) {
+            return System.getProperty(key);
+        }
+        throw new ValueNotFoundException();
+    }
+
+    private String getValueFromMap(String key) throws ValueNotFoundException {
+        if (map.containsKey(key)) {
+            return map.get(key);
+        }
+        throw new ValueNotFoundException();
+    }
+
+    private String getValueFromDB(String key) throws SQLException, ValueNotFoundException {
+        checkConnection();
+        if (connection != null) {
+            try (PreparedStatement st = connection.prepareStatement("select " + tableKeyColumn + " as key, " + tableValueColumn + " as val from " + tableName + " where " + tableKeyColumn + " = ?")) {
+                st.setString(1, key);
+                try (ResultSet res = st.executeQuery()) {
+                    if (res.next()) {
+                        return res.getString("key");
+                    }
+                }
+            }
+        }
+        throw new ValueNotFoundException();
     }
 
     public Map<String, String> getMap() {
@@ -132,5 +204,27 @@ public enum ABYSConf {
         return Collections.unmodifiableMap(map);
     }
 
-}
+    private void checkConnection() {
+        synchronized (reloadLock) {
+            try {
+                if (!connection.isValid(1 /*burası saniye dikkat*/)) {
+                    reconnectToDb(map);//tekra bağlanır
+                }
+            } catch (SQLException ex) {
+                //parametre negatif ise bu hatayı verirmiş doğal olarak atlanabilir
+            }
+        }
+    }
 
+    private class ValueNotFoundException extends Exception {
+
+        public ValueNotFoundException(Throwable cause) {
+            super(cause);
+        }
+
+        public ValueNotFoundException() {
+        }
+
+    }
+
+}
