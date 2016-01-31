@@ -129,16 +129,45 @@ public enum ABYSConf {
         return Boolean.valueOf(getValueFromAll(key, Boolean.toString(defaultValue)));
     }
 
+    public Boolean getValue(String key, Boolean defaultValue) {
+        String ret = getValueFromAll(key, defaultValue == null ? null : defaultValue.toString());
+        return ret == null ? null : Boolean.valueOf(ret);
+    }
+
     public double getValue(String key, double defaultValue) {
         return Double.valueOf(getValueFromAll(key, Double.toString(defaultValue)));
+    }
+
+    public Double getValue(String key, Double defaultValue) {
+        String ret = getValueFromAll(key, defaultValue == null ? null : defaultValue.toString());
+        return ret == null ? null : Double.valueOf(ret);
+    }
+
+    public float getValue(String key, float defaultValue) {
+        return Float.valueOf(getValueFromAll(key, Float.toString(defaultValue)));
+    }
+
+    public Float getValue(String key, Float defaultValue) {
+        String ret = getValueFromAll(key, defaultValue == null ? null : defaultValue.toString());
+        return ret == null ? null : Float.valueOf(ret);
     }
 
     public int getValue(String key, int defaultValue) {
         return Integer.valueOf(getValueFromAll(key, Integer.toString(defaultValue)));
     }
 
+    public Integer getValue(String key, Integer defaultValue) {
+        String ret = getValueFromAll(key, defaultValue == null ? null : defaultValue.toString());
+        return ret == null ? null : Integer.valueOf(ret);
+    }
+
     public long getValue(String key, long defaultValue) {
         return Integer.valueOf(getValueFromAll(key, Long.toString(defaultValue)));
+    }
+
+    public Long getValue(String key, Long defaultValue) {
+        String ret = getValueFromAll(key, defaultValue == null ? null : defaultValue.toString());
+        return ret == null ? null : Long.valueOf(ret);
     }
 
     /**
@@ -207,7 +236,7 @@ public enum ABYSConf {
     private void checkConnection() {
         synchronized (reloadLock) {
             try {
-                if (!connection.isValid(1 /*burası saniye dikkat*/)) {
+                if (connection == null || !connection.isValid(1 /*burası saniye dikkat*/)) {
                     reconnectToDb(map);//tekra bağlanır
                 }
             } catch (SQLException ex) {
