@@ -8,7 +8,7 @@ package com.yoncabt.abys.report.executor;
 import com.yoncabt.abys.report.ReportOutputFormat;
 import com.yoncabt.abys.report.ReportRequest;
 import com.yoncabt.abys.report.ReportResponse;
-import com.yoncabt.abys.report.YoncaJasperReports;
+import com.yoncabt.abys.report.executor.jasper.YoncaJasperReports;
 import com.yoncabt.abys.report.jdbcbridge.YoncaConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

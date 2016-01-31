@@ -3,9 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.yoncabt.abys.report;
+package com.yoncabt.abys.report.executor.jasper;
 
 import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.report.ReportOutputFormat;
 import com.yoncabt.abys.report.jdbcbridge.YoncaConnection;
 import com.yoncabt.abys.report.logger.fs.FileSystemReportLogger;
 import com.yoncabt.abys.report.logger.ReportLogger;
@@ -62,8 +63,10 @@ import net.sf.jasperreports.engine.util.JRElementsVisitor;
 import net.sf.jasperreports.engine.util.JRSaver;
 import net.sf.jasperreports.engine.xml.JRXmlLoader;
 import net.sf.jasperreports.export.Exporter;
+import net.sf.jasperreports.export.ExporterOutput;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
+import net.sf.jasperreports.export.SimpleWriterExporterOutput;
 import oracle.jdbc.OracleDriver;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +79,34 @@ import org.springframework.stereotype.Component;
 @Singleton
 @Component
 public class YoncaJasperReports {
+    public static void main(String[] args) {
+        try {
+            System.setProperty("report.jrmxl.path", "/home/myururdurmaz/reports");
+            System.setProperty("report.jasper.path", "/home/myururdurmaz/reports");
+            System.setProperty("report.out.path", "/tmp");
+
+            YoncaJasperReports jasperReports = new YoncaJasperReports();
+            jasperReports.reportLogger = new FileSystemReportLogger();
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("CORP_NAME", "DENEM A.Ş");
+            params.put("LANG", 1);
+            params.put("LOGO_PATH", "/tmp/logo.png");
+            params.put("OPTIONAL_PARAMETER", " and rownum = 1");
+            params.put("TITLE_ONE", "Başılk 1");
+            params.put("TITLE_TWO", "balık 2");
+
+            DriverManager.registerDriver(new OracleDriver());
+            YoncaConnection con = new YoncaConnection(
+                    DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS"));
+            try (InputStream exportTo = jasperReports.exportTo("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml", params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis());
+                    FileOutputStream fos = new FileOutputStream("/tmp/rapor1")) {
+                IOUtils.copy(exportTo, fos);
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(YoncaJasperReports.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     @Autowired
     private ReportLogger reportLogger;
@@ -129,50 +160,63 @@ public class YoncaJasperReports {
                 /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
                 connection);
 
+        File outBase = new File(ABYSConf.INSTANCE.getValue("report.out.path", "/usr/local/reports/out"));
+        File exportReportFile = new File(outBase, uuid + "." + outputFormat.name());
         Exporter exporter;
+        ExporterOutput output;
         switch (outputFormat) {
             case pdf:
                 exporter = new JRPdfExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case html:
                 exporter = new HtmlExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case xls:
                 exporter = new JRXlsExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case xlsx:
                 exporter = new JRXlsxExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case rtf:
                 exporter = new JRRtfExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case csv:
                 exporter = new JRCsvExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case xml:
                 exporter = new JRXmlExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case docx:
                 exporter = new JRDocxExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case odt:
                 exporter = new JROdtExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case ods:
                 exporter = new JROdsExporter();
+                output = new SimpleOutputStreamExporterOutput(exportReportFile);
                 break;
             case jprint:
+            case txt:
                 exporter = new JRTextExporter();
+                output = new SimpleWriterExporterOutput(exportReportFile);
+                putTextParams((JRTextExporter)exporter, params, "SUITABLE");
                 break;
             default:
                 throw new AssertionError(outputFormat.toString() + " not supported");
         }
         exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-        File outBase = new File(ABYSConf.INSTANCE.getValue("report.out.path", "/usr/local/reports/out"));
 
-        File exportReportFile = new File(outBase, uuid + "." + outputFormat.name());
-
-        exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(exportReportFile));
+        exporter.setExporterOutput(output);
         exporter.exportReport();
 
         try (FileInputStream fis = new FileInputStream(exportReportFile)) {
@@ -288,32 +332,17 @@ public class YoncaJasperReports {
         return jrxmlFile;
     }
 
-    public static void main(String[] args) {
-        try {
-            System.setProperty("report.jrmxl.path", "/home/myururdurmaz/reports");
-            System.setProperty("report.jasper.path", "/home/myururdurmaz/reports");
-            System.setProperty("report.out.path", "/tmp");
 
-            YoncaJasperReports jasperReports = new YoncaJasperReports();
-            jasperReports.reportLogger = new FileSystemReportLogger();
-
-            Map<String, Object> params = new HashMap<>();
-            params.put("CORP_NAME", "DENEM A.Ş");
-            params.put("LANG", 1);
-            params.put("LOGO_PATH", "/tmp/logo.png");
-            params.put("OPTIONAL_PARAMETER", " and rownum = 1");
-            params.put("TITLE_ONE", "Başılk 1");
-            params.put("TITLE_TWO", "balık 2");
-
-            DriverManager.registerDriver(new OracleDriver());
-            YoncaConnection con = new YoncaConnection(
-                    DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS"));
-            try (InputStream exportTo = jasperReports.exportTo("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml", params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis());
-                    FileOutputStream fos = new FileOutputStream("/tmp/rapor1")) {
-                IOUtils.copy(exportTo, fos);
+    private void putTextParams(JRTextExporter exporter, Map<String, Object> params, String textTemplate) {
+        ABYSConf.INSTANCE.getMap().entrySet().stream().forEach((entry) -> {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key.startsWith("report.texttemplate." + textTemplate)) {
+                String jrKey = key.replace("report.texttemplate." + textTemplate + ".", "");
+                params.put(jrKey, value);
             }
-        } catch (Exception ex) {
-            Logger.getLogger(YoncaJasperReports.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        });
+        exporter.setConfiguration(new YoncaTextExporterConfiguration(textTemplate));
+        exporter.setConfiguration(new YoncaTextReportConfiguration(textTemplate));
     }
 }
