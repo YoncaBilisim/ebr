@@ -4,12 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.yoncabt.abys</groupId>
-    <artifactId>report</artifactId>
+    <artifactId>ebr</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>Report Server</name>
-    <description>Report Server</description>
+    <name>East Blue</name>
+    <description>East Blue Report Server</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

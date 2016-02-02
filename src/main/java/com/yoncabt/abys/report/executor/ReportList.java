@@ -33,6 +33,10 @@ public class ReportList {
         return requestMap.get(uuid);
     }
 
+    public ReportTask remove(String uuid) {
+        return requestMap.remove(uuid);
+    }
+
     public ReportTask get(int id) {
         return requestList.get(id);
     }

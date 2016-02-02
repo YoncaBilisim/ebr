@@ -53,12 +53,14 @@ public class ReportWS {
     @RequestMapping(
             value = {"/ws/1.0/status/{requestId}"},
             method = RequestMethod.GET,
-            produces = "application/json",
-            consumes = "application/json")
+            produces = "application/json")
     public ResponseEntity<ReportResponse> status(
             @PathVariable("requestId") String requestId
     ) {
         ReportTask task = requestList.get(requestId);
+        if (task == null) {//başlamamış
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
         if (task.getStarted() == 0) {//başlamamış
             return ResponseEntity.status(HttpStatus.CREATED).body(task.getResponse());
         }
@@ -114,9 +116,11 @@ public class ReportWS {
         if (StringUtils.isBlank(req.getUuid())) {
             req.setUuid(reportIDGenerator.generate());
         }
+        if(!req.getReport().endsWith(".jrxml"))
+            req.setReport(req.getReport() + ".jrxml");
         task.setRequest(req);
         requestList.add(task);
-        if (req.isAsync()) {
+//        if (req.isAsync()) {
             executor.execute(task);
             ReportResponse res = new ReportResponse();
             res.setUuid(req.getUuid());
@@ -125,14 +129,15 @@ public class ReportWS {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
             }
             return ResponseEntity.status(HttpStatus.CREATED).body(res);
-        } else {
-            //hemen çalışacak olanlar buraya
-            task.run();
-            if (task.getException() != null) {
-                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
-            }
-            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
-        }
+//        } else {
+//            //hemen çalışacak olanlar buraya
+//            task.run();
+//            if (task.getException() != null) {
+//                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
+//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
+//            }
+//            requestList.remove(req.getUuid());
+//            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
+//        }
     }
 }

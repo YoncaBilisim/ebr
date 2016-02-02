@@ -5,6 +5,7 @@
  */
 package com.yoncabt.abys.report.executor;
 
+import com.yoncabt.abys.report.jdbcbridge.JDBCUtil;
 import com.yoncabt.abys.report.ReportOutputFormat;
 import com.yoncabt.abys.report.ReportRequest;
 import com.yoncabt.abys.report.ReportResponse;
@@ -13,6 +14,7 @@ import com.yoncabt.abys.report.jdbcbridge.YoncaConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.Collections;
 import javax.mail.MessagingException;
 import net.sf.jasperreports.engine.JRException;
@@ -36,6 +38,9 @@ public class ReportTask implements Runnable {
     @Autowired
     private YoncaMailSender mailSender;
 
+    @Autowired
+    private JDBCUtil jdbcutil;
+
     private ReportRequest request;
 
     private ReportResponse response;
@@ -53,15 +58,25 @@ public class ReportTask implements Runnable {
         started = System.currentTimeMillis();
         response = new ReportResponse();
         response.setUuid(request.getUuid());
-        try (InputStream is = jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            IOUtils.copy(is, baos);
-            response.setOutput(baos.toByteArray());//burası RAMi doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
-            if(!StringUtils.isBlank(request.getEmail())) {
-                mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
+        try {
+            connection = jdbcutil.connect(request.getDatasourceName());
+            try (InputStream is = jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                IOUtils.copy(is, baos);
+                if (!request.isAsync()) { //sadece senkron ise buraya keydetsin
+                    response.setOutput(baos.toByteArray());//burası RAMi doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
+                }
+                if (!StringUtils.isBlank(request.getEmail())) {
+                    mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
+                }
             }
-        } catch (JRException | IOException | MessagingException ex) {
+        } catch (JRException | IOException | MessagingException | SQLException ex) {
+            ex.printStackTrace();
             exception = ex;
+        } finally {
+            if (connection != null) {
+                connection.forceClose();
+            }
         }
         ended = System.currentTimeMillis();
     }

@@ -233,6 +233,7 @@ public class YoncaJasperReports {
     private synchronized File compileIfRequired(String fileName) throws JRException {
         File jrxmlFile = getJrxmlFile(fileName);
         File jasperFile = getJasperFile(fileName);
+        jasperFile.getParentFile().mkdirs();
         if (jrxmlFile.lastModified() > jasperFile.lastModified()) {
             JasperDesign jasperDesign = JRXmlLoader.load(jrxmlFile.getAbsolutePath());
             JasperReport jasperReport = JasperCompileManager.compileReport(jasperDesign);
