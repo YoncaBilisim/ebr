@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Singleton;
 import net.sf.jasperreports.crosstabs.JRCrosstab;
+import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JRBreak;
 import net.sf.jasperreports.engine.JRChart;
 import net.sf.jasperreports.engine.JRComponentElement;
@@ -117,6 +118,11 @@ public class YoncaJasperReports {
         // önce genel parametreleri dolduralım. logo_path falan gibi
         ABYSConf.INSTANCE.getMap().entrySet().stream().forEach((es) -> {
             String key = es.getKey();
+            if (key.startsWith("report.jrproperties.")) {
+                key = key.substring("report.jrproperties.".length());
+                String value = es.getValue();
+                DefaultJasperReportsContext.getInstance().setProperty(key, value);
+            }
             if (key.startsWith("report.params.")) {
                 key = key.substring("report.params.".length());
                 String value = es.getValue();
