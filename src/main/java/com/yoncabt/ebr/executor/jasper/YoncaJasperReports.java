@@ -12,9 +12,7 @@ import com.yoncabt.ebr.logger.fs.FileSystemReportLogger;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.DriverManager;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -60,6 +58,7 @@ import net.sf.jasperreports.engine.export.oasis.JROdtExporter;
 import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter;
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
 import net.sf.jasperreports.engine.util.JRElementsVisitor;
+import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.engine.util.JRSaver;
 import net.sf.jasperreports.engine.xml.JRXmlLoader;
 import net.sf.jasperreports.export.Exporter;
@@ -68,7 +67,6 @@ import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimpleWriterExporterOutput;
 import oracle.jdbc.OracleDriver;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -99,10 +97,7 @@ public class YoncaJasperReports {
             DriverManager.registerDriver(new OracleDriver());
             YoncaConnection con = new YoncaConnection(
                     DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS"));
-            try (InputStream exportTo = jasperReports.exportTo("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml", params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis());
-                    FileOutputStream fos = new FileOutputStream("/tmp/rapor1")) {
-                IOUtils.copy(exportTo, fos);
-            }
+            jasperReports.exportTo("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml", params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis());
         } catch (Exception ex) {
             Logger.getLogger(YoncaJasperReports.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -111,7 +106,7 @@ public class YoncaJasperReports {
     @Autowired
     private ReportLogger reportLogger;
 
-    public InputStream exportTo(
+    public void exportTo(
             String reportName,
             Map<String, Object> params,
             ReportOutputFormat outputFormat,
@@ -155,8 +150,16 @@ public class YoncaJasperReports {
         params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
         params.put(JRParameter.REPORT_LOCALE, new Locale("tr_TR"));
 
+        JasperReport jasperReport = (JasperReport)JRLoader.loadObject(compileIfRequired(reportName));
+        for(JRParameter param : jasperReport.getParameters()) {
+            Object val = params.get(param.getName());
+            if(val == null)
+                continue;
+            params.put(param.getName(), Convert.to(val, param.getValueClass()));
+        }
+
         JasperPrint jasperPrint = JasperFillManager.fillReport(
-                compileIfRequired(reportName).getAbsolutePath(),
+                jasperReport,
                 /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
                 connection);
 
@@ -221,12 +224,6 @@ public class YoncaJasperReports {
 
         try (FileInputStream fis = new FileInputStream(exportReportFile)) {
             reportLogger.logReport(uuid, params, outputFormat, fis);
-        }
-
-        try {
-            return new FileInputStream(exportReportFile);
-        } finally {
-            exportReportFile.delete();// bu hile sadece linuxta çalışır :D. linux stream kapatılana kadar dosyayı tutacaktır.
         }
     }
 

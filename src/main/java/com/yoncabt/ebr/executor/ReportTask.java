@@ -13,13 +13,11 @@ import com.yoncabt.ebr.executor.jasper.YoncaJasperReports;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Collections;
 import javax.mail.MessagingException;
 import net.sf.jasperreports.engine.JRException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -60,17 +58,15 @@ public class ReportTask implements Runnable {
         response.setUuid(request.getUuid());
         try {
             connection = jdbcutil.connect(request.getDatasourceName());
-            try (InputStream is = jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                IOUtils.copy(is, baos);
-                if (!request.isAsync()) { //sadece senkron ise buraya keydetsin
-                    response.setOutput(baos.toByteArray());//burası RAMi doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
-                }
-                if (!StringUtils.isBlank(request.getEmail())) {
-                    mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
-                }
+            jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            if (!request.isAsync()) { //sadece senkron ise buraya keydetsin
+                response.setOutput(baos.toByteArray());//burası RAMi doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
             }
-        } catch (JRException | IOException | MessagingException | SQLException ex) {
+            if (!StringUtils.isBlank(request.getEmail())) {
+                mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
+            }
+        } catch (Exception ex) {
             ex.printStackTrace();
             exception = ex;
         } finally {
