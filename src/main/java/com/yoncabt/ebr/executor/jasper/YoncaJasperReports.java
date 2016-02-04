@@ -65,6 +65,7 @@ import net.sf.jasperreports.engine.xml.JRXmlLoader;
 import net.sf.jasperreports.export.Exporter;
 import net.sf.jasperreports.export.ExporterOutput;
 import net.sf.jasperreports.export.SimpleExporterInput;
+import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimpleWriterExporterOutput;
 import oracle.jdbc.OracleDriver;
@@ -180,7 +181,7 @@ public class YoncaJasperReports {
                 break;
             case html:
                 exporter = new HtmlExporter();
-                output = new SimpleOutputStreamExporterOutput(exportReportFile);
+                output = new SimpleHtmlExporterOutput(exportReportFile);
                 break;
             case xls:
                 exporter = new JRXlsExporter();
@@ -192,7 +193,7 @@ public class YoncaJasperReports {
                 break;
             case rtf:
                 exporter = new JRRtfExporter();
-                output = new SimpleOutputStreamExporterOutput(exportReportFile);
+                output = new SimpleWriterExporterOutput(exportReportFile);
                 break;
             case csv:
                 exporter = new JRCsvExporter();

@@ -6,6 +6,7 @@
 package com.yoncabt.ebr.ws;
 
 import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.ReportIDGenerator;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
@@ -50,6 +51,8 @@ public class ReportWS {
     @Autowired
     private ReportLogger reportLogger;
 
+    private static FLogManager logManager = FLogManager.getLogger(ReportTask.class);
+
     @RequestMapping(
             value = {"/ws/1.0/status/{requestId}"},
             method = RequestMethod.GET,
@@ -59,18 +62,26 @@ public class ReportWS {
     ) {
         ReportTask task = requestList.get(requestId);
         if (task == null) {//başlamamış
+            logManager.info("status query :YOK !!! " + requestId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-        if (task.getStarted() == 0) {//başlamamış
-            return ResponseEntity.status(HttpStatus.CREATED).body(task.getResponse());
+        logManager.info("status query :" + task.getRequest().getUuid());
+        synchronized (task) {
+            if (task.getStarted() == 0) {//başlamamış
+                logManager.info("status query :" + task.getRequest().getUuid() + " :başlamış");
+                return ResponseEntity.status(HttpStatus.CREATED).body(task.getResponse());
+            }
+            if (task.getEnded() == 0) {//devam ediyor
+                logManager.info("status query :" + task.getRequest().getUuid() + " :devam ediyor");
+                return ResponseEntity.status(HttpStatus.PROCESSING).body(task.getResponse());
+            }
+            if (task.getException() != null) {
+                logManager.info("status query :" + task.getRequest().getUuid() + " :hata");
+                return ResponseEntity.status(420).body(task.getResponse());//420 Method Failure
+            }
+                logManager.info("status query :" + task.getRequest().getUuid() + " :bitmiş");
+            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
         }
-        if (task.getEnded() == 0) {//devam ediyor
-            return ResponseEntity.status(HttpStatus.PROCESSING).body(task.getResponse());
-        }
-        if (task.getException() != null) {
-            return ResponseEntity.status(420).body(task.getResponse());//420 Method Failure
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
     }
 
     @RequestMapping(
@@ -80,6 +91,12 @@ public class ReportWS {
     public ResponseEntity<byte[]> output(
             @PathVariable("requestId") String requestId
     ) throws IOException {
+        ReportTask task = requestList.get(requestId);
+        if (task == null) {//başlamamış
+            logManager.info("output :YOK !!! " + requestId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        logManager.info("output :" + task.getRequest().getUuid());
         return ResponseEntity.status(HttpStatus.OK).body(reportLogger.getReportData(requestId));
     }
 
@@ -116,19 +133,20 @@ public class ReportWS {
         if (StringUtils.isBlank(req.getUuid())) {
             req.setUuid(reportIDGenerator.generate());
         }
-        if(!req.getReport().endsWith(".jrxml"))
+        if (!req.getReport().endsWith(".jrxml")) {
             req.setReport(req.getReport() + ".jrxml");
+        }
         task.setRequest(req);
         requestList.add(task);
 //        if (req.isAsync()) {
-            executor.execute(task);
-            ReportResponse res = new ReportResponse();
-            res.setUuid(req.getUuid());
-            if (task.getException() != null) {
-                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
-            }
-            return ResponseEntity.status(HttpStatus.CREATED).body(res);
+        executor.execute(task);
+        ReportResponse res = new ReportResponse();
+        res.setUuid(req.getUuid());
+        if (task.getException() != null) {
+            task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
 //        } else {
 //            //hemen çalışacak olanlar buraya
 //            task.run();

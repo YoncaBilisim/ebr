@@ -5,6 +5,7 @@
  */
 package com.yoncabt.ebr.executor;
 
+import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
@@ -12,11 +13,7 @@ import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.executor.jasper.YoncaJasperReports;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collections;
-import javax.mail.MessagingException;
-import net.sf.jasperreports.engine.JRException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -39,6 +36,8 @@ public class ReportTask implements Runnable {
     @Autowired
     private JDBCUtil jdbcutil;
 
+    private static FLogManager logManager = FLogManager.getLogger(ReportTask.class);
+
     private ReportRequest request;
 
     private ReportResponse response;
@@ -53,7 +52,10 @@ public class ReportTask implements Runnable {
 
     @Override
     public void run() {
-        started = System.currentTimeMillis();
+        logManager.info(request.getUuid() + " başladı");
+        synchronized(this) {
+            started = System.currentTimeMillis();
+        }
         response = new ReportResponse();
         response.setUuid(request.getUuid());
         try {
@@ -66,15 +68,20 @@ public class ReportTask implements Runnable {
             if (!StringUtils.isBlank(request.getEmail())) {
                 mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
             }
+            logManager.info(request.getUuid() + " bitti");
         } catch (Exception ex) {
-            ex.printStackTrace();
-            exception = ex;
+            logManager.error(request.getUuid() + " hata", ex);
+            synchronized(this) {
+                exception = ex;
+            }
         } finally {
             if (connection != null) {
                 connection.forceClose();
             }
         }
-        ended = System.currentTimeMillis();
+        synchronized(this) {
+            ended = System.currentTimeMillis();
+        }
     }
 
     public ReportRequest getRequest() {
