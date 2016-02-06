@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * bunu çalışan raporu kapatabilmek için kullanacağım.
@@ -86,8 +88,12 @@ public class YoncaConnection implements Connection {
     }
 
     @Override
-    public void close() throws SQLException {
-        connection.close();
+    public void close() {
+        try {
+            connection.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(YoncaConnection.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
@@ -323,28 +329,13 @@ public class YoncaConnection implements Connection {
         return connection.getNetworkTimeout();
     }
 
-    public void forceClose() {
+    public void cancel() {
         for (Statement st : statementList) {
             try {
                 st.cancel();
             } catch (SQLException ex) {
                 //ignore
             }
-            try {
-                st.getResultSet().close();
-            } catch (SQLException ex) {
-                //ignore
-            }
-            try {
-                st.close();
-            } catch (SQLException ex) {
-                //ignore
-            }
-        }
-        try {
-            close();
-        } catch (SQLException ex) {
-            //ignore
         }
     }
 

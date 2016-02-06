@@ -16,6 +16,7 @@ import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,9 +80,48 @@ public class ReportWS {
                 logManager.info("status query :" + task.getRequest().getUuid() + " :hata");
                 return ResponseEntity.status(420).body(task.getResponse());//420 Method Failure
             }
-                logManager.info("status query :" + task.getRequest().getUuid() + " :bitmiş");
+            logManager.info("status query :" + task.getRequest().getUuid() + " :bitmiş");
             return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
         }
+    }
+
+    @RequestMapping(
+            value = {"/ws/1.0/reports"},
+            method = RequestMethod.GET,
+            produces = "application/json")
+    public ResponseEntity<List<String>> reports() {
+        return ResponseEntity.ok(requestList.getAllIds());
+    }
+
+    @RequestMapping(
+            value = {"/ws/1.0/detail/{requestId}"},
+            method = RequestMethod.GET,
+            produces = "application/json")
+    public ResponseEntity<ReportTask> detail(
+            @PathVariable("requestId") String requestId
+    ) {
+        ReportTask task = requestList.get(requestId);
+        if (task == null) {//başlamamış
+            logManager.info("output :YOK !!! " + requestId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(task);
+    }
+
+    @RequestMapping(
+            value = {"/ws/1.0/cancel/{requestId}"},
+            method = RequestMethod.GET,
+            produces = "application/json")
+    public ResponseEntity<ReportTask> cancel(
+            @PathVariable("requestId") String requestId
+    ) {
+        ReportTask task = requestList.get(requestId);
+        if (task == null) {//başlamamış
+            logManager.info("output :YOK !!! " + requestId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        task.cancel();
+        return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
     @RequestMapping(
@@ -138,7 +178,6 @@ public class ReportWS {
         }
         task.setRequest(req);
         requestList.add(task);
-//        if (req.isAsync()) {
         executor.execute(task);
         ReportResponse res = new ReportResponse();
         res.setUuid(req.getUuid());
@@ -147,15 +186,5 @@ public class ReportWS {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
-//        } else {
-//            //hemen çalışacak olanlar buraya
-//            task.run();
-//            if (task.getException() != null) {
-//                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
-//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
-//            }
-//            requestList.remove(req.getUuid());
-//            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
-//        }
     }
 }

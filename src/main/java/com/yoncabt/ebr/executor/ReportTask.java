@@ -27,6 +27,8 @@ import org.springframework.stereotype.Component;
 @Scope("prototype")
 public class ReportTask implements Runnable {
 
+    private volatile Status status = Status.WAIT;
+
     @Autowired
     private YoncaJasperReports jasperReports;
 
@@ -52,8 +54,12 @@ public class ReportTask implements Runnable {
 
     @Override
     public void run() {
+        if (status == Status.CANCEL) {
+            return;
+        }
+        status = Status.RUN;
         logManager.info(request.getUuid() + " başladı");
-        synchronized(this) {
+        synchronized (this) {
             started = System.currentTimeMillis();
         }
         response = new ReportResponse();
@@ -69,17 +75,18 @@ public class ReportTask implements Runnable {
                 mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
             }
             logManager.info(request.getUuid() + " bitti");
+            status = Status.FINISH;
         } catch (Exception ex) {
             logManager.error(request.getUuid() + " hata", ex);
-            synchronized(this) {
+            synchronized (this) {
                 exception = ex;
             }
         } finally {
             if (connection != null) {
-                connection.forceClose();
+                connection.close();
             }
         }
-        synchronized(this) {
+        synchronized (this) {
             ended = System.currentTimeMillis();
         }
     }
@@ -113,5 +120,21 @@ public class ReportTask implements Runnable {
 
     public long getEnded() {
         return ended;
+    }
+
+    public void cancel() {
+        if (status != Status.FINISH) {
+            status = Status.CANCEL;
+        }
+        if (getYoncaConnection() != null) {
+            getYoncaConnection().cancel();
+        }
+    }
+
+    /**
+     * @return the status
+     */
+    public Status getStatus() {
+        return status;
     }
 }

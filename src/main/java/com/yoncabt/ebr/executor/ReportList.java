@@ -21,8 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class ReportList {
 
-    private List<ReportTask> requestList = new ArrayList<>();
-    private Map<String, ReportTask> requestMap = new HashMap<>();
+    private List<ReportTask> requestList = Collections.synchronizedList(new ArrayList<>());
+    private Map<String, ReportTask> requestMap = Collections.synchronizedMap(new HashMap<>());
 
     public void add(ReportTask task) {
         requestMap.put(task.getRequest().getUuid(), task);
@@ -47,5 +47,9 @@ public class ReportList {
 
     public int count() {
         return requestList.size();
+    }
+
+    public List<String> getAllIds() {
+        return new ArrayList<>(requestMap.keySet());
     }
 }
