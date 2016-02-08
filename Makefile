@@ -6,6 +6,15 @@ war: versiyon
 clean:
 	rm -rf target
 
+builder:
+	ssh yonca-builder "cd ebr/ebr && git pull && make build-on-builder"
+
+build-on-builder:
+	git pull origin master
+	./mvnw clean install -DskipTests
+	cd target && md5sum ebr.war > md5sum.txt && mv ebr.war ~/builder.yoncabt.com.tr/ebr && mv md5sum.txt ~/builder.yoncabt.com.tr/ebr
+
+
 send-war: war
 	scp target/*.war yururdurmazm@download.yoncabt.com.tr:~/download.yoncabt.com.tr/d/
 
