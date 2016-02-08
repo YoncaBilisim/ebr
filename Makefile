@@ -11,7 +11,7 @@ builder:
 
 build-on-builder:
 	git pull origin master
-	PATH="$$HOME/jdk1.8.0_45/bin:$$PATH" ./mvnw clean install -DskipTests
+	PATH="$$HOME/jdk8/bin:$$PATH" ./mvnw clean install -DskipTests
 	cd target && md5sum ebr.war > md5sum.txt && mv ebr.war ~/builder.yoncabt.com.tr/ebr && mv md5sum.txt ~/builder.yoncabt.com.tr/ebr
 
 
