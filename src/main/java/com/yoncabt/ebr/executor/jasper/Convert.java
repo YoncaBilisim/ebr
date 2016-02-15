@@ -13,6 +13,12 @@ import java.util.ResourceBundle;
  */
 public class Convert {
 
+    /**
+     * burası jrxml e gidecek verilerin tip dönüşümünü yapar.
+     * @param val
+     * @param valueClass
+     * @return
+     */
     public static Object to(Object val, Class<?> valueClass) {
         if(val.getClass() == valueClass) {
             return val;

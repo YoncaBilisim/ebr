@@ -68,9 +68,6 @@ public class ReportTask implements Runnable {
             connection = jdbcutil.connect(request.getDatasourceName());
             jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            if (!request.isAsync()) { //sadece senkron ise buraya keydetsin
-                response.setOutput(baos.toByteArray());//burası RAMi doldurabilir dikakt etmek lazım. bunun yerine diske bir yere yazıp istenince vermek daha mantıklı olabilir
-            }
             if (!StringUtils.isBlank(request.getEmail())) {
                 mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
             }

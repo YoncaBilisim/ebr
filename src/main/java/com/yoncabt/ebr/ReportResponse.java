@@ -16,10 +16,6 @@ public class ReportResponse {
      */
     private String uuid;
     /**
-     * rapor çıktısı. veya urlden de istenebilir
-     */
-    private byte[] output;
-    /**
      * hatanın logu
      */
     private String exceptionLog;
@@ -36,20 +32,6 @@ public class ReportResponse {
      */
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    /**
-     * @return the output
-     */
-    public byte[] getOutput() {
-        return output;
-    }
-
-    /**
-     * @param output the output to set
-     */
-    public void setOutput(byte[] output) {
-        this.output = output;
     }
 
     /**

@@ -160,6 +160,7 @@ public class ReportWS {
             method = RequestMethod.POST,
             produces = "application/json",
             consumes = "application/json")
+    @SuppressWarnings("ThrowableResultIgnored")
     public ResponseEntity<ReportResponse> request(
             @RequestBody(required = true) ReportRequest req
     ) {
@@ -178,13 +179,23 @@ public class ReportWS {
         }
         task.setRequest(req);
         requestList.add(task);
-        executor.execute(task);
-        ReportResponse res = new ReportResponse();
-        res.setUuid(req.getUuid());
-        if (task.getException() != null) {
-            task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
+        if (req.isAsync()) {
+            executor.execute(task);
+            ReportResponse res = new ReportResponse();
+            res.setUuid(req.getUuid());
+            if (task.getException() != null) {
+                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(res);
+        } else {
+            //hemen çalışacak olanlar buraya
+            task.run();
+            if (task.getException() != null) {
+                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 }

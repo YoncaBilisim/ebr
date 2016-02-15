@@ -10,7 +10,6 @@ import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Map;
@@ -20,10 +19,11 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
+import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 
 public class BaseDBReportLogger implements ReportLogger {
 
-    private Connection connection;
+    private YoncaConnection connection;
 
     @Autowired
     private JDBCUtil jdbcutil;
