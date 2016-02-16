@@ -57,17 +57,18 @@ public class ReportStatusWindow extends Window {
         ));
 
         fillTheGrid();
+        setWidth(100, Unit.PERCENTAGE);
     }
 
     private Grid makeGrid() {
         Grid ret = new Grid();
         ret.setId("reportsGrid");
-        ret.addColumn("uuid", String.class).setWidth(170);
-        ret.addColumn("data source", String.class).setWidth(150);
-        ret.addColumn("report", String.class).setWidth(250);
-        ret.addColumn("ext", String.class).setWidth(40);
-        ret.addColumn("started", String.class).setWidth(140);
-        ret.addColumn("ended", String.class).setWidth(140);
+        ret.addColumn("uuid", String.class);
+        ret.addColumn("data source", String.class);
+        ret.addColumn("report", String.class);
+        ret.addColumn("ext", String.class);
+        ret.addColumn("started", String.class);
+        ret.addColumn("ended", String.class);
         ret.addColumn("iptal", String.class).setRenderer(
                 new ButtonRenderer((ClickableRenderer.RendererClickEvent e) -> {
                     String uuid = (String) grid.getContainerDataSource().getItem(e.getItemId()).getItemProperty("uuid").getValue();
@@ -83,8 +84,8 @@ public class ReportStatusWindow extends Window {
                         Notification.show("Bitmiş bir rapor yok");
                     }
                 }));
-        ret.addColumn("durum", String.class).setWidth(100);
-        ret.addColumn("exception", String.class).setWidth(400);
+        ret.addColumn("durum", String.class);
+        ret.addColumn("exception", String.class);
         ret.setSizeFull();
         return ret;
     }
