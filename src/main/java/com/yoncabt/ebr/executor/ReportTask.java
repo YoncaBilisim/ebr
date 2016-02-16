@@ -6,11 +6,11 @@
 package com.yoncabt.ebr.executor;
 
 import com.yoncabt.abys.core.util.log.FLogManager;
-import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.executor.jasper.YoncaJasperReports;
+import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import java.io.ByteArrayOutputStream;
 import java.util.Collections;
@@ -74,6 +74,7 @@ public class ReportTask implements Runnable {
             logManager.info(request.getUuid() + " bitti");
             status = Status.FINISH;
         } catch (Exception ex) {
+            status = Status.EXCEPTION;
             logManager.error(request.getUuid() + " hata", ex);
             synchronized (this) {
                 exception = ex;
