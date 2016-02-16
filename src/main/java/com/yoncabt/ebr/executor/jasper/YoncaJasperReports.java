@@ -20,7 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Singleton;
@@ -289,18 +288,13 @@ public class YoncaJasperReports {
 
                 @Override
                 public void visitSubreport(JRSubreport subreport) {
-                    String expression = subreport.getExpression().getText().replace(".jasper", "");
-
-                    StringTokenizer st = new StringTokenizer(expression, "\"/");
-                    String subReportName = null;
-                    while (st.hasMoreTokens()) {
-                        subReportName = st.nextToken();
-                    }
+                    String subReportName = subreport.getExpression().getText().replace("repo:", "");
+                    File subReportFile = new File(jrxmlFile.getParentFile(), subReportName);
                     try {
                         //Sometimes the same subreport can be used multiple times, but
                         //there is no need to compile multiple times
                         // burada tam path bulmak gerekebilir
-                        compileIfRequired(subReportName + ".jrxml");
+                        compileIfRequired(subReportFile.getAbsolutePath());
                     } catch (JRException ex) {
                         throw new RuntimeException(ex);
                     }
