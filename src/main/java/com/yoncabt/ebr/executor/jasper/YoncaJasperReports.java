@@ -171,6 +171,7 @@ public class YoncaJasperReports {
                 connection);
 
         File outBase = new File(ABYSConf.INSTANCE.getValue("report.out.path", "/usr/local/reports/out"));
+        outBase.mkdirs();
         File exportReportFile = new File(outBase, uuid + "." + outputFormat.name());
         Exporter exporter;
         ExporterOutput output;
