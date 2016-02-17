@@ -25,29 +25,12 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Singleton;
-import net.sf.jasperreports.crosstabs.JRCrosstab;
 import net.sf.jasperreports.engine.DefaultJasperReportsContext;
-import net.sf.jasperreports.engine.JRBreak;
-import net.sf.jasperreports.engine.JRChart;
-import net.sf.jasperreports.engine.JRComponentElement;
-import net.sf.jasperreports.engine.JRElementGroup;
-import net.sf.jasperreports.engine.JREllipse;
 import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JRFrame;
-import net.sf.jasperreports.engine.JRGenericElement;
-import net.sf.jasperreports.engine.JRImage;
-import net.sf.jasperreports.engine.JRLine;
 import net.sf.jasperreports.engine.JRParameter;
-import net.sf.jasperreports.engine.JRRectangle;
-import net.sf.jasperreports.engine.JRStaticText;
-import net.sf.jasperreports.engine.JRSubreport;
-import net.sf.jasperreports.engine.JRTextField;
-import net.sf.jasperreports.engine.JRVisitor;
-import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.design.JasperDesign;
 import net.sf.jasperreports.engine.export.HtmlExporter;
 import net.sf.jasperreports.engine.export.JRCsvExporter;
 import net.sf.jasperreports.engine.export.JRPdfExporter;
@@ -59,10 +42,7 @@ import net.sf.jasperreports.engine.export.oasis.JROdsExporter;
 import net.sf.jasperreports.engine.export.oasis.JROdtExporter;
 import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter;
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
-import net.sf.jasperreports.engine.util.JRElementsVisitor;
 import net.sf.jasperreports.engine.util.JRLoader;
-import net.sf.jasperreports.engine.util.JRSaver;
-import net.sf.jasperreports.engine.xml.JRXmlLoader;
 import net.sf.jasperreports.export.Exporter;
 import net.sf.jasperreports.export.ExporterOutput;
 import net.sf.jasperreports.export.SimpleExporterInput;
@@ -118,7 +98,6 @@ public class YoncaJasperReports {
             String locale,
             String uuid,
             ReportDefinition reportDefinition) throws JRException, IOException {
-        String reportName = reportDefinition.getName();
         // önce genel parametreleri dolduralım. logo_path falan gibi
         ABYSConf.INSTANCE.getMap().entrySet().stream().forEach((es) -> {
             String key = es.getKey();
@@ -136,7 +115,7 @@ public class YoncaJasperReports {
         params.put("__extension", outputFormat.name());
         params.put("__start_time", System.currentTimeMillis());
 
-        File jrxmlFile = getJrxmlFile(reportName);
+        File jrxmlFile = reportDefinition.getFile();
         //alttaki satır tehlikeli olabilir mi ?
         File resourceFile = new File(jrxmlFile.getParentFile(), "messages_" + locale + ".properties");
         Properties properties = new Properties();
@@ -160,14 +139,7 @@ public class YoncaJasperReports {
         params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
         params.put(JRParameter.REPORT_LOCALE, new Locale("tr_TR"));
 
-        JasperReport jasperReport = (JasperReport)JRLoader.loadObject(compileIfRequired(reportName));
-        for(JRParameter param : jasperReport.getParameters()) {
-            Object val = params.get(param.getName());
-            if(val == null)
-                continue;
-            params.put(param.getName(), Convert.to(val, param.getValueClass()));
-        }
-
+        JasperReport jasperReport = (JasperReport)JRLoader.loadObject(com.yoncabt.ebr.executor.jasper.JasperReport.compileIfRequired(jrxmlFile));
         JasperPrint jasperPrint = JasperFillManager.fillReport(
                 jasperReport,
                 /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
@@ -244,104 +216,6 @@ public class YoncaJasperReports {
         try (FileInputStream fis = new FileInputStream(exportReportFile)) {
             reportLogger.logReport(uuid, params, outputFormat, fis);
         }
-    }
-
-    private synchronized File compileIfRequired(String fileName) throws JRException {
-        File jrxmlFile = getJrxmlFile(fileName);
-        File jasperFile = getJasperFile(fileName);
-        jasperFile.getParentFile().mkdirs();
-        if (jrxmlFile.lastModified() > jasperFile.lastModified()) {
-            JasperDesign jasperDesign = JRXmlLoader.load(jrxmlFile.getAbsolutePath());
-            JasperReport jasperReport = JasperCompileManager.compileReport(jasperDesign);
-            JRSaver.saveObject(jasperReport, jasperFile.getAbsolutePath());
-            //toLog("Saving compiled report to: " + jasperFile.getAbsolutePath());
-            //Compile sub reports
-            JRElementsVisitor.visitReport(jasperReport, new JRVisitor() {
-
-                @Override
-                public void visitBreak(JRBreak breakElement) {
-                }
-
-                @Override
-                public void visitChart(JRChart chart) {
-                }
-
-                @Override
-                public void visitCrosstab(JRCrosstab crosstab) {
-                }
-
-                @Override
-                public void visitElementGroup(JRElementGroup elementGroup) {
-                }
-
-                @Override
-                public void visitEllipse(JREllipse ellipse) {
-                }
-
-                @Override
-                public void visitFrame(JRFrame frame) {
-                }
-
-                @Override
-                public void visitImage(JRImage image) {
-                }
-
-                @Override
-                public void visitLine(JRLine line) {
-                }
-
-                @Override
-                public void visitRectangle(JRRectangle rectangle) {
-                }
-
-                @Override
-                public void visitStaticText(JRStaticText staticText) {
-                }
-
-                @Override
-                public void visitSubreport(JRSubreport subreport) {
-                    String subReportName = subreport.getExpression().getText().replace("repo:", "");
-                    File subReportFile = new File(jrxmlFile.getParentFile(), subReportName);
-                    try {
-                        //Sometimes the same subreport can be used multiple times, but
-                        //there is no need to compile multiple times
-                        // burada tam path bulmak gerekebilir
-                        compileIfRequired(subReportFile.getAbsolutePath());
-                    } catch (JRException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-
-                @Override
-                public void visitTextField(JRTextField textField) {
-                }
-
-                @Override
-                public void visitComponentElement(JRComponentElement componentElement) {
-                }
-
-                @Override
-                public void visitGenericElement(JRGenericElement element) {
-                }
-
-            });
-            JasperCompileManager.compileReportToFile(
-                    jrxmlFile.getAbsolutePath(),
-                    jasperFile.getAbsolutePath());
-        }
-        return jasperFile;
-    }
-
-    private File getJasperFile(String fileName) {
-        File jasperBase = new File(ABYSConf.INSTANCE.getValue("report.jasper.path", "/usr/local/reports"));
-        File jasperFile = new File(jasperBase, fileName.replace(".jrxml", ".jasper"));
-        return jasperFile;
-    }
-
-    private File getJrxmlFile(String fileName) {
-        File jrxmlBase = new File(ABYSConf.INSTANCE.getValue("report.jrmxl.path", "/usr/local/reports"));
-        File jrxmlFile = new File(jrxmlBase, fileName);
-        return jrxmlFile;
     }
 
 

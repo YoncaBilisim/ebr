@@ -17,6 +17,7 @@ import com.vaadin.ui.DateField;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
@@ -26,6 +27,8 @@ import com.yoncabt.abys.core.util.ABYSConf;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
+import com.yoncabt.ebr.executor.definition.ReportType;
+import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.executor.sql.SQLReport;
 import com.yoncabt.ebr.jdbcbridge.JDBCNamedParameters;
 import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
@@ -40,9 +43,11 @@ import java.sql.Types;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.sf.jasperreports.engine.JRException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -55,7 +60,6 @@ public class ReportWindow extends UI {
     @Autowired
     private JDBCUtil jdbcutil;
 
-    private static final String EBR_JSON_MAGIC = "/*EBR.JSON";
     private Window window = new Window("BAŞLIKSIZ");
     private FormLayout formLayout = new FormLayout();
     private Grid grid = new Grid();
@@ -64,6 +68,15 @@ public class ReportWindow extends UI {
 
     @Override
     protected void init(VaadinRequest request) {
+
+        try {
+            MenuBar mb = createMenuBar();
+            HorizontalLayout hl = new HorizontalLayout(mb);
+            setContent(hl);
+        } catch (IOException | JRException ex) {
+            Notification.show("Hata", Notification.Type.ERROR_MESSAGE);
+            Logger.getLogger(ReportWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         Button btnReload = new Button(FontAwesome.LIST_ALT);
         btnReload.addClickListener((Button.ClickEvent event) -> {
@@ -96,11 +109,15 @@ public class ReportWindow extends UI {
 
     private void uriFragmentChanged(String frag) {
         try {
-            File sqlDir = new File(ABYSConf.INSTANCE.getValue("report.sql.path", "/home/myururdurmaz/reports/sql"));
-            File sqlFile = new File(sqlDir, frag);
-            if (sqlFile.exists()) {
-                sql = FileUtils.readFileToString(sqlFile, "utf-8").trim();
-                sqlreport = new SQLReport(frag);
+            ReportType type = frag.endsWith(".sql") ? ReportType.SQL : ReportType.JASPER;
+            String reportPath = type == ReportType.SQL
+                    ? ABYSConf.INSTANCE.getValue("report.sql.path", "/home/myururdurmaz/reports/sql")
+                    : ABYSConf.INSTANCE.getValue("report.jrxml.path", "/home/myururdurmaz/reports");
+            File reportDir = new File(reportPath);
+            File reportFile = new File(reportDir, frag);
+            if (reportFile.exists()) {
+                sql = FileUtils.readFileToString(reportFile, "utf-8").trim();
+                sqlreport = new SQLReport(JasperReport.getSqlFile(frag));
                 reportDefinition = sqlreport.loadDefinition();
                 showFields(reportDefinition, window, formLayout);
             } else {
@@ -129,12 +146,12 @@ public class ReportWindow extends UI {
                 comp = f;
             } else if (type == Integer.class) {
                 TextField f = new TextField(param.getLabel());
-                f.addValidator(new IntegerRangeValidator("Sayı kontrolü", (Integer)param.getMin(), (Integer)param.getMax()));
+                f.addValidator(new IntegerRangeValidator("Sayı kontrolü", (Integer) param.getMin(), (Integer) param.getMax()));
                 f.setImmediate(true);
                 comp = f;
             } else if (type == Long.class) {
                 TextField f = new TextField(param.getLabel());
-                f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long)param.getMin(), (Long)param.getMax()));
+                f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long) param.getMin(), (Long) param.getMax()));
                 f.setImmediate(true);
                 comp = f;
             } else {
@@ -161,29 +178,29 @@ public class ReportWindow extends UI {
         JDBCNamedParameters p = new JDBCNamedParameters(sql);
         for (ReportParam reportParam : reportDefinition.getReportParams()) {
             Class type = reportParam.getType();
-                if(type == Integer.class) {
-                    String value = (String) findFormField(reportParam.getName()).getValue();
-                    if (!StringUtils.isEmpty(value)) {
-                        p.set(reportParam.getName(), Integer.parseInt(value));
-                    }
+            if (type == Integer.class) {
+                String value = (String) findFormField(reportParam.getName()).getValue();
+                if (!StringUtils.isEmpty(value)) {
+                    p.set(reportParam.getName(), Integer.parseInt(value));
                 }
-                if(type == Long.class){
-                    String value = (String) findFormField(reportParam.getName()).getValue();
-                    if (!StringUtils.isEmpty(value)) {
-                        p.set(reportParam.getName(), Long.parseLong(value));
-                    }
-                    break;
-                }
-                if(type == Long.class){
-                    String value = (String) findFormField(reportParam.getName()).getValue();
+            }
+            if (type == Long.class) {
+                String value = (String) findFormField(reportParam.getName()).getValue();
+                if (!StringUtils.isEmpty(value)) {
                     p.set(reportParam.getName(), Long.parseLong(value));
-                    break;
                 }
-                if(type == Date.class) {
-                    Date value = (Date) findFormField(reportParam.getName()).getValue();
-                    p.set(reportParam.getName(), value);
-                    break;
-                }
+                break;
+            }
+            if (type == Long.class) {
+                String value = (String) findFormField(reportParam.getName()).getValue();
+                p.set(reportParam.getName(), Long.parseLong(value));
+                break;
+            }
+            if (type == Date.class) {
+                Date value = (Date) findFormField(reportParam.getName()).getValue();
+                p.set(reportParam.getName(), value);
+                break;
+            }
         }
 
         try (YoncaConnection con = jdbcutil.connect(reportDefinition.getDataSource());
@@ -229,6 +246,43 @@ public class ReportWindow extends UI {
                     }
                 }
                 grid.addRow(values);
+            }
+        }
+    }
+
+    private MenuBar createMenuBar() throws IOException, JRException {
+        MenuBar mb = new MenuBar();
+        File dir = new File(ABYSConf.INSTANCE.getValue("report.jrxml.path", "/home/myururdurmaz/reports"));
+        createMenuBar(mb.addItem("Raporlar", null), dir);
+        return mb;
+    }
+
+    private void createMenuBar(MenuBar.MenuItem mainItem, File dir) throws IOException, JRException {
+        String menuText = dir.getName();
+        File folderConfig = new File(dir, "folder.ebr.json");
+        if (folderConfig.exists()) {
+            JSONObject jo = new JSONObject(FileUtils.readFileToString(folderConfig, "utf-8"));
+            menuText = jo.optString("label", menuText);
+        }
+        MenuBar.MenuItem menuItem = mainItem.addItem(menuText, null);
+
+        for (File file : dir.listFiles()) {
+            if (file.getName().charAt(0) == '.') {
+                continue;//gereksiz ama olduğu belli olsun
+            } else if (file.isDirectory()) {
+                createMenuBar(menuItem, file);
+            } else if (file.getName().endsWith(".sql")) {
+                final SQLReport r = new SQLReport(file);
+                String text = r.loadDefinition().getCaption();
+                menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
+                    System.out.println(r.getFile() + " çalıştırılacak");
+                });
+            } else if (file.getName().endsWith(".jrxml")) {//FIXME support for compiled jasper files
+                final JasperReport r = new JasperReport(file.getAbsolutePath());
+                String text = r.loadDefinition().getCaption();
+                menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
+                    System.out.println(r.getName() + " çalıştırılacak");
+                });
             }
         }
     }

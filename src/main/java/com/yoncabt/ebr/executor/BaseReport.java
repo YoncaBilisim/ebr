@@ -24,10 +24,10 @@ public abstract class BaseReport {
     public BaseReport() {
     }
 
-    public ReportDefinition loadDefinition(String name, File jsonFile) throws AssertionError, IOException, JSONException {
-        ReportDefinition ret = new ReportDefinition(name);
+    public ReportDefinition loadDefinition(File reportFile, File jsonFile) throws AssertionError, IOException, JSONException {
+        ReportDefinition ret = new ReportDefinition(reportFile);
         if (!jsonFile.exists()) {
-            ret.setCaption("NO ebr.json");
+            ret.setCaption(jsonFile.getName().replace(".ebr.json", ""));
             return ret;
         }
         String jsonComment = FileUtils.readFileToString(jsonFile, "utf-8");

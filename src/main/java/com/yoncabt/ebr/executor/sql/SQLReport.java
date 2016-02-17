@@ -6,7 +6,6 @@
 package com.yoncabt.ebr.executor.sql;
 
 import com.yoncabt.ebr.executor.BaseReport;
-import com.yoncabt.abys.core.util.ABYSConf;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import java.io.File;
 import java.io.IOException;
@@ -17,31 +16,29 @@ import java.io.IOException;
  */
 public class SQLReport extends BaseReport {
 
-    private String name;
+    private File file;
 
-    public SQLReport(String name) {
-        this.name = name;
+    public SQLReport(File file) {
+        this.file = file;
     }
 
     public ReportDefinition loadDefinition() throws IOException {
-        String jsonFileName = name.substring(0, name.lastIndexOf(".sql")) + ".ebr.json";
-        File reportDir = new File(ABYSConf.INSTANCE.getValue("report.sql.path", "/home/myururdurmaz/reports/sql"));
-        File jsonFile = new File(reportDir, jsonFileName);
-        return loadDefinition(name, jsonFile);
-    }
-
-
-    /**
-     * @return the name
-     */
-    public String getName() {
-        return name;
+        String jsonFilePath = file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".sql")) + ".ebr.json";
+        File jsonFile = new File(jsonFilePath);
+        return loadDefinition(file, jsonFile);
     }
 
     /**
-     * @param name the name to set
+     * @return the file
      */
-    public void setName(String name) {
-        this.name = name;
+    public File getFile() {
+        return file;
+    }
+
+    /**
+     * @param file the file to set
+     */
+    public void setFile(File file) {
+        this.file = file;
     }
 }

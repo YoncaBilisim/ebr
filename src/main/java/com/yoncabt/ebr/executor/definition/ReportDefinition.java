@@ -5,6 +5,7 @@
  */
 package com.yoncabt.ebr.executor.definition;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,10 +20,10 @@ public class ReportDefinition {
     private ReportType reportType;
     private String dataSource;
     private String textEncoding;
-    private String name;
+    private File file;
 
-    public ReportDefinition(String name) {
-        this.name = name;
+    public ReportDefinition(File file) {
+        this.file = file;
     }
 
     public List<ReportParam> getReportParams() {
@@ -87,17 +88,16 @@ public class ReportDefinition {
     }
 
     /**
-     * @return the name
+     * @return the file
      */
-    public String getName() {
-        return name;
+    public File getFile() {
+        return file;
     }
 
     /**
-     * @param name the name to set
+     * @param file the file to set
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setFile(File file) {
+        this.file = file;
     }
-
 }
