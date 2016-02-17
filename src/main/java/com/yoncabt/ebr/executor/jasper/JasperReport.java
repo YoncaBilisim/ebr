@@ -82,16 +82,10 @@ public class JasperReport extends BaseReport {
         return jasperFile;
     }
 
-    public static File getJrxmlFile(String fileName) {
+    public static File getReportFile(String fileName) {
         File jrxmlBase = new File(ABYSConf.INSTANCE.getValue("report.jrmxl.path", "/usr/local/reports"));
         File jrxmlFile = new File(jrxmlBase, fileName);
         return jrxmlFile;
-    }
-
-    public static File getSqlFile(String fileName) {
-        File sqlBase = new File(ABYSConf.INSTANCE.getValue("report.sql.path", "/usr/local/reports"));
-        File sqlFile = new File(sqlBase, fileName);
-        return sqlFile;
     }
 
     public static synchronized File compileIfRequired(File jrxmlFile) throws JRException {

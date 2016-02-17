@@ -27,7 +27,6 @@ import com.yoncabt.abys.core.util.ABYSConf;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
-import com.yoncabt.ebr.executor.definition.ReportType;
 import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.executor.sql.SQLReport;
 import com.yoncabt.ebr.jdbcbridge.JDBCNamedParameters;
@@ -79,13 +78,15 @@ public class ReportWindow extends UI {
         }
 
         Button btnReload = new Button(FontAwesome.LIST_ALT);
+        btnReload.setDisableOnClick(true);
         btnReload.addClickListener((Button.ClickEvent event) -> {
             try {
                 fillTheGrid();
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 Notification.show("Hata", Notification.Type.ERROR_MESSAGE);
                 Logger.getLogger(ReportWindow.class.getName()).log(Level.SEVERE, null, ex);
             }
+            event.getButton().setEnabled(true);
         });
         Button btnExport = YoncaGridXLSExporter.createDownloadButton(grid, "raporlar.xls");
 
@@ -109,15 +110,12 @@ public class ReportWindow extends UI {
 
     private void uriFragmentChanged(String frag) {
         try {
-            ReportType type = frag.endsWith(".sql") ? ReportType.SQL : ReportType.JASPER;
-            String reportPath = type == ReportType.SQL
-                    ? ABYSConf.INSTANCE.getValue("report.sql.path", "/home/myururdurmaz/reports/sql")
-                    : ABYSConf.INSTANCE.getValue("report.jrxml.path", "/home/myururdurmaz/reports");
+            String reportPath = ABYSConf.INSTANCE.getValue("report.jrxml.path", "/home/myururdurmaz/reports");
             File reportDir = new File(reportPath);
             File reportFile = new File(reportDir, frag);
             if (reportFile.exists()) {
                 sql = FileUtils.readFileToString(reportFile, "utf-8").trim();
-                sqlreport = new SQLReport(JasperReport.getSqlFile(frag));
+                sqlreport = new SQLReport(JasperReport.getReportFile(frag));
                 reportDefinition = sqlreport.loadDefinition();
                 showFields(reportDefinition, window, formLayout);
             } else {
@@ -131,6 +129,7 @@ public class ReportWindow extends UI {
     private ReportDefinition reportDefinition;
 
     private void showFields(ReportDefinition definition, final Window w, final FormLayout fl) throws AssertionError, JSONException {
+        fl.removeAllComponents();
         w.setCaption(definition.getCaption());
         for (ReportParam param : definition.getReportParams()) {
             Class type = param.getType();
@@ -155,7 +154,7 @@ public class ReportWindow extends UI {
                 f.setImmediate(true);
                 comp = f;
             } else {
-                throw new AssertionError(type);
+                throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getType());
             }
 
             comp.setId(param.getName());
@@ -184,22 +183,22 @@ public class ReportWindow extends UI {
                     p.set(reportParam.getName(), Integer.parseInt(value));
                 }
             }
-            if (type == Long.class) {
+            else if (type == Long.class) {
                 String value = (String) findFormField(reportParam.getName()).getValue();
                 if (!StringUtils.isEmpty(value)) {
                     p.set(reportParam.getName(), Long.parseLong(value));
                 }
-                break;
             }
-            if (type == Long.class) {
+            else if (type == Long.class) {
                 String value = (String) findFormField(reportParam.getName()).getValue();
                 p.set(reportParam.getName(), Long.parseLong(value));
-                break;
             }
-            if (type == Date.class) {
+            else if (type == Date.class) {
                 Date value = (Date) findFormField(reportParam.getName()).getValue();
                 p.set(reportParam.getName(), value);
-                break;
+            }
+            else {
+                throw new AssertionError(reportParam.getName() + " in tipi tanınmıyor :" + reportParam.getType());
             }
         }
 
@@ -209,7 +208,7 @@ public class ReportWindow extends UI {
             ResultSetMetaData md = res.getMetaData();
             for (int i = 0; i < md.getColumnCount(); i++) {
                 Class type;
-                if (md.getColumnType(i + 1) == Types.VARCHAR) {
+                if (md.getColumnType(i + 1) == Types.VARCHAR || md.getColumnType(i + 1) == Types.CHAR) {
                     type = String.class;
                 } else if (md.getColumnType(i + 1) == Types.DATE) {
                     type = Date.class;
@@ -229,7 +228,7 @@ public class ReportWindow extends UI {
             while (res.next()) {
                 Object values[] = new Object[md.getColumnCount()];
                 for (int i = 0; i < md.getColumnCount(); i++) {
-                    if (md.getColumnType(i + 1) == Types.VARCHAR) {
+                    if (md.getColumnType(i + 1) == Types.VARCHAR || md.getColumnType(i + 1) == Types.CHAR) {
                         values[i] = res.getString(i + 1);
                     } else if (md.getColumnType(i + 1) == Types.DATE) {
                         values[i] = res.getDate(i + 1);
