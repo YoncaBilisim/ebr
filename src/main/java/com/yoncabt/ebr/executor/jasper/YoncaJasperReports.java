@@ -63,7 +63,7 @@ import org.springframework.stereotype.Component;
 public class YoncaJasperReports {
     public static void test(String[] args) {
         try {
-            System.setProperty("report.jrmxl.path", "/home/myururdurmaz/reports");
+            System.setProperty("report.jrxml.path", "/home/myururdurmaz/reports");
             System.setProperty("report.jasper.path", "/home/myururdurmaz/reports");
             System.setProperty("report.out.path", "/tmp");
 
@@ -81,7 +81,7 @@ public class YoncaJasperReports {
             DriverManager.registerDriver(new OracleDriver());
             YoncaConnection con = new YoncaConnection(
                     DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS"));
-            com.yoncabt.ebr.executor.jasper.JasperReport jr = new com.yoncabt.ebr.executor.jasper.JasperReport("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml");
+            com.yoncabt.ebr.executor.jasper.JasperReport jr = new com.yoncabt.ebr.executor.jasper.JasperReport(com.yoncabt.ebr.executor.jasper.JasperReport.getReportFile("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml"));
             jasperReports.exportTo(params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis(), jr.loadDefinition());
         } catch (Exception ex) {
             Logger.getLogger(YoncaJasperReports.class.getName()).log(Level.SEVERE, null, ex);

@@ -42,27 +42,20 @@ import net.sf.jasperreports.engine.xml.JRXmlLoader;
  */
 public class JasperReport extends BaseReport {
 
-    private String name;
+    private File file;
 
-    public JasperReport(String name) {
-        this.name = name;
+    public JasperReport(File file) {
+        this.file = file;
     }
 
     public ReportDefinition loadDefinition() throws IOException, JRException {
-        String jsonFileName = name.substring(0, name.lastIndexOf(".jrxml")) + ".ebr.json";
-        File jrxmlFile, jsonFile;
-        if (!new File(name).isAbsolute()) {
-            File reportDir = new File(ABYSConf.INSTANCE.getValue("report.jrxml.path", "/home/myururdurmaz/reports"));
-            jsonFile = new File(reportDir, jsonFileName);
-            jrxmlFile = new File(reportDir, name);
-        } else {
-            jsonFile = new File(jsonFileName);
-            jrxmlFile = new File(name);
-        }
-        final ReportDefinition ret = loadDefinition(jrxmlFile, jsonFile);
+        String jsonFileName = file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".jrxml")) + ".ebr.json";
+        File jsonFile;
+        jsonFile = new File(jsonFileName);
+        final ReportDefinition ret = loadDefinition(file, jsonFile);
         ret.setReportType(ReportType.JASPER);
 
-        net.sf.jasperreports.engine.JasperReport jasperReport = (net.sf.jasperreports.engine.JasperReport) JRLoader.loadObject(compileIfRequired(jrxmlFile));
+        net.sf.jasperreports.engine.JasperReport jasperReport = (net.sf.jasperreports.engine.JasperReport) JRLoader.loadObject(compileIfRequired(file));
         for (JRParameter param : jasperReport.getParameters()) {
             if (!param.isForPrompting()) {
                 continue;
@@ -77,13 +70,13 @@ public class JasperReport extends BaseReport {
     }
 
     public static File getJasperFile(String fileName) {
-        File jasperBase = new File(ABYSConf.INSTANCE.getValue("report.jrmxl.path", "/usr/local/reports"));
+        File jasperBase = new File(ABYSConf.INSTANCE.getValue("report.jrxml.path", "/usr/local/reports"));
         File jasperFile = new File(jasperBase, fileName.replace(".jrxml", ".jasper"));
         return jasperFile;
     }
 
     public static File getReportFile(String fileName) {
-        File jrxmlBase = new File(ABYSConf.INSTANCE.getValue("report.jrmxl.path", "/usr/local/reports"));
+        File jrxmlBase = new File(ABYSConf.INSTANCE.getValue("report.jrxml.path", "/usr/local/reports"));
         File jrxmlFile = new File(jrxmlBase, fileName);
         return jrxmlFile;
     }
@@ -175,16 +168,17 @@ public class JasperReport extends BaseReport {
     }
 
     /**
-     * @return the name
+     * @return the file
      */
-    public String getName() {
-        return name;
+    public File getFile() {
+        return file;
     }
 
     /**
-     * @param name the name to set
+     * @param file the file to set
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setFile(File file) {
+        this.file = file;
     }
+
 }

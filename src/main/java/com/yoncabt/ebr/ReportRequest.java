@@ -185,7 +185,7 @@ public class ReportRequest {
 //    public static void main(String[] args) {
 //        ReportRequest req = new ReportRequest();
 //
-//        System.setProperty("report.jrmxl.path", "/home/myururdurmaz/reports");
+//        System.setProperty("report.jrxml.path", "/home/myururdurmaz/reports");
 //        System.setProperty("report.jasper.path", "/home/myururdurmaz/reports");
 //        System.setProperty("report.out.path", "/tmp");
 //

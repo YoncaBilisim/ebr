@@ -5,13 +5,11 @@ import com.vaadin.data.Property;
 import com.vaadin.server.FileDownloader;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.StreamResource;
-import com.vaadin.server.StreamResource.StreamSource;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Grid;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -30,17 +28,15 @@ public class YoncaGridXLSExporter {
 
     public static Button createDownloadButton(final Grid grid, String fileName) {
         Button downloadButton = new Button(FontAwesome.DOWNLOAD);
+        downloadButton.setData(grid);
 
-        StreamResource myResource = new StreamResource(new StreamSource() {
-            @Override
-            public InputStream getStream() {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try {
-                    saveGridToFile(grid, baos);
-                    return new ByteArrayInputStream(baos.toByteArray());
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
+        StreamResource myResource = new StreamResource(() -> {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try {
+                saveGridToFile((Grid)downloadButton.getData(), baos);
+                return new ByteArrayInputStream(baos.toByteArray());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
         }, fileName);
         FileDownloader fileDownloader = new FileDownloader(myResource);

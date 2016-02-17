@@ -10,6 +10,7 @@ import com.vaadin.data.validator.LongRangeValidator;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.shared.ui.grid.HeightMode;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.Button;
@@ -61,9 +62,11 @@ public class ReportWindow extends UI {
 
     private Window window = new Window("BAŞLIKSIZ");
     private FormLayout formLayout = new FormLayout();
-    private Grid grid = new Grid();
+    private Grid grid;
     private String sql;
     private SQLReport sqlreport;
+    private HorizontalLayout gridLayout;
+    private Button btnExport;
 
     @Override
     protected void init(VaadinRequest request) {
@@ -88,12 +91,17 @@ public class ReportWindow extends UI {
             }
             event.getButton().setEnabled(true);
         });
-        Button btnExport = YoncaGridXLSExporter.createDownloadButton(grid, "raporlar.xls");
+        gridLayout = new HorizontalLayout();
+        createGrid();
+        btnExport = YoncaGridXLSExporter.createDownloadButton(grid, "raporlar.xls");
 
+        gridLayout.setSizeFull();
+
+        window.setSizeUndefined();
         window.setContent(new VerticalLayout(
                 formLayout,
                 new HorizontalLayout(btnExport, btnReload),
-                grid
+                gridLayout
         ));
         window.setClosable(false);
         addWindow(window);
@@ -137,26 +145,24 @@ public class ReportWindow extends UI {
             if (type == Date.class) {
                 DateField f = new DateField(param.getLabel());
                 f.setDateFormat(param.getFormat());
-                f.setImmediate(true);
                 comp = f;
             } else if (type == String.class) {
                 TextField f = new TextField(param.getLabel());
-                f.setImmediate(true);
                 comp = f;
             } else if (type == Integer.class) {
                 TextField f = new TextField(param.getLabel());
                 f.addValidator(new IntegerRangeValidator("Sayı kontrolü", (Integer) param.getMin(), (Integer) param.getMax()));
-                f.setImmediate(true);
                 comp = f;
             } else if (type == Long.class) {
                 TextField f = new TextField(param.getLabel());
                 f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long) param.getMin(), (Long) param.getMax()));
-                f.setImmediate(true);
                 comp = f;
             } else {
                 throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getType());
             }
 
+            comp.setImmediate(true);
+            comp.setValidationVisible(false);
             comp.setId(param.getName());
             fl.addComponent(comp);
 
@@ -173,7 +179,8 @@ public class ReportWindow extends UI {
     }
 
     private void fillTheGrid() throws SQLException {
-        grid.removeAllColumns();
+        gridLayout.removeComponent(grid);
+        createGrid();
         JDBCNamedParameters p = new JDBCNamedParameters(sql);
         for (ReportParam reportParam : reportDefinition.getReportParams()) {
             Class type = reportParam.getType();
@@ -247,6 +254,17 @@ public class ReportWindow extends UI {
                 grid.addRow(values);
             }
         }
+        grid.recalculateColumnWidths();
+    }
+
+    private void createGrid() {
+        grid = new Grid();
+        grid.setWidth("800px");
+        grid.setHeight("600px");
+        grid.setHeightMode(HeightMode.CSS);
+        gridLayout.addComponent(grid);
+        if(btnExport != null)
+            btnExport.setData(grid);
     }
 
     private MenuBar createMenuBar() throws IOException, JRException {
@@ -275,12 +293,18 @@ public class ReportWindow extends UI {
                 String text = r.loadDefinition().getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");
+                    String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), ABYSConf.INSTANCE.getValue("report.jrxml.path", ""));
+                    frag = StringUtils.removeStart(frag, "/");
+                    getPage().setUriFragment(frag);
                 });
             } else if (file.getName().endsWith(".jrxml")) {//FIXME support for compiled jasper files
-                final JasperReport r = new JasperReport(file.getAbsolutePath());
+                final JasperReport r = new JasperReport(file);
                 String text = r.loadDefinition().getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
-                    System.out.println(r.getName() + " çalıştırılacak");
+                    System.out.println(r.getFile() + " çalıştırılacak");
+                    String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), ABYSConf.INSTANCE.getValue("report.jrxml.path", ""));
+                    frag = StringUtils.removeStart(frag, "/");
+                    getPage().setUriFragment(frag);
                 });
             }
         }
