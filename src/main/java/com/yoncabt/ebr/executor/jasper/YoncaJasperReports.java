@@ -140,6 +140,13 @@ public class YoncaJasperReports {
         params.put(JRParameter.REPORT_LOCALE, new Locale("tr_TR"));
 
         JasperReport jasperReport = (JasperReport)JRLoader.loadObject(com.yoncabt.ebr.executor.jasper.JasperReport.compileIfRequired(jrxmlFile));
+        for(JRParameter param : jasperReport.getParameters()) {
+            Object val = params.get(param.getName());
+            if(val == null)
+                continue;
+            params.put(param.getName(), Convert.to(val, param.getValueClass()));
+        }
+
         JasperPrint jasperPrint = JasperFillManager.fillReport(
                 jasperReport,
                 /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
