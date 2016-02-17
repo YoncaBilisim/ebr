@@ -47,9 +47,6 @@ public class ReportStatusWindow extends Window {
             fillTheGrid();
         });
         Button btnExport = YoncaGridXLSExporter.createDownloadButton(grid, "raporlar.xls");
-        btnReload.addClickListener((Button.ClickEvent event) -> {
-            fillTheGrid();
-        });
 
         setContent(new VerticalLayout(
                 new HorizontalLayout(btnExport, btnReload),

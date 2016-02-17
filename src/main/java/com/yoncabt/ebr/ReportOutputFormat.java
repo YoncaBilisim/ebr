@@ -11,28 +11,33 @@ package com.yoncabt.ebr;
  */
 public enum ReportOutputFormat {
 
-    pdf("application/pdf"),
-    html("text/html;charset=UTF-8"),
-    xls("application/vnd.ms-excel"),
-    xlsx("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    rtf("text/rtf"),
-    csv("text/csv"),
-    xml("text/xml"),
-    txt("text/plain"),
-    docx("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-    odt("application/vnd.oasis.opendocument.tex"),
-    ods("application/vnd.oasis.opendocument.spreadsheet"),
-    jprint("application/jprint");
+    pdf("application/pdf", false),
+    html("text/html;charset=UTF-8", false),
+    xls("application/vnd.ms-excel", false),
+    xlsx("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", false),
+    rtf("text/rtf", false),
+    csv("text/csv", true),
+    xml("text/xml", false),
+    txt("text/plain", true),
+    docx("application/vnd.openxmlformats-officedocument.wordprocessingml.document", false),
+    odt("application/vnd.oasis.opendocument.tex", false),
+    ods("application/vnd.oasis.opendocument.spreadsheet", false),
+    jprint("application/jprint", true);
 
     private String mimeType;
+    private boolean text;
 
-    private ReportOutputFormat(String mimeType) {
+    private ReportOutputFormat(String mimeType, boolean text) {
         this.mimeType = mimeType;
+        this.text = text;
     }
 
     public String getMimeType() {
         return mimeType;
     }
 
+    public boolean isText() {
+        return text;
+    }
 
 }

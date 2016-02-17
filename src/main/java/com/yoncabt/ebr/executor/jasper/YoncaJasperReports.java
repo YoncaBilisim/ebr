@@ -7,9 +7,11 @@ package com.yoncabt.ebr.executor.jasper;
 
 import com.yoncabt.abys.core.util.ABYSConf;
 import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
 import com.yoncabt.ebr.logger.fs.FileSystemReportLogger;
+import com.yoncabt.ebr.util.ASCIIFier;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -68,6 +70,7 @@ import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimpleWriterExporterOutput;
 import oracle.jdbc.OracleDriver;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -98,7 +101,8 @@ public class YoncaJasperReports {
             DriverManager.registerDriver(new OracleDriver());
             YoncaConnection con = new YoncaConnection(
                     DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS"));
-            jasperReports.exportTo("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml", params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis());
+            com.yoncabt.ebr.executor.jasper.JasperReport jr = new com.yoncabt.ebr.executor.jasper.JasperReport("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml");
+            jasperReports.exportTo(params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis(), jr.loadDefinition());
         } catch (Exception ex) {
             Logger.getLogger(YoncaJasperReports.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -108,13 +112,13 @@ public class YoncaJasperReports {
     private ReportLogger reportLogger;
 
     public void exportTo(
-            String reportName,
             Map<String, Object> params,
             ReportOutputFormat outputFormat,
             YoncaConnection connection,
             String locale,
-            String uuid) throws JRException, IOException {
-
+            String uuid,
+            ReportDefinition reportDefinition) throws JRException, IOException {
+        String reportName = reportDefinition.getName();
         // önce genel parametreleri dolduralım. logo_path falan gibi
         ABYSConf.INSTANCE.getMap().entrySet().stream().forEach((es) -> {
             String key = es.getKey();
@@ -228,6 +232,14 @@ public class YoncaJasperReports {
 
         exporter.setExporterOutput(output);
         exporter.exportReport();
+        if(outputFormat.isText() && !"utf-8".equals(reportDefinition.getTextEncoding())) {
+            String reportData = FileUtils.readFileToString(exportReportFile, "utf-8");
+            if("ascii".equals(reportDefinition.getTextEncoding())) {
+                FileUtils.write(exportReportFile, ASCIIFier.ascii(reportData));
+            } else {
+                FileUtils.write(exportReportFile, reportData, reportDefinition.getTextEncoding());
+            }
+        }
 
         try (FileInputStream fis = new FileInputStream(exportReportFile)) {
             reportLogger.logReport(uuid, params, outputFormat, fis);

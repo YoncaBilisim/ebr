@@ -9,6 +9,8 @@ import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
+import com.yoncabt.ebr.executor.definition.ReportDefinition;
+import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.executor.jasper.YoncaJasperReports;
 import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
@@ -66,7 +68,11 @@ public class ReportTask implements Runnable {
         response.setUuid(request.getUuid());
         try {
             connection = jdbcutil.connect(request.getDatasourceName());
-            jasperReports.exportTo(request.getReport(), request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid());
+            //FIXME support for sql
+            JasperReport jr = new JasperReport(request.getReport());
+            ReportDefinition definition = jr.loadDefinition();
+            definition.setDataSource(request.getDatasourceName());
+            jasperReports.exportTo(request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid(), definition);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             if (!StringUtils.isBlank(request.getEmail())) {
                 mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));

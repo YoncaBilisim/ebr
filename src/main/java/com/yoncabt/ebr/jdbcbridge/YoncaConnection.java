@@ -5,6 +5,7 @@
  */
 package com.yoncabt.ebr.jdbcbridge;
 
+import java.io.Closeable;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
  * bunu çalışan raporu kapatabilmek için kullanacağım.
  * @author myururdurmaz
  */
-public class YoncaConnection implements Connection {
+public class YoncaConnection implements Connection, Closeable {
 
     private Connection connection;
     private List<Statement> statementList = new ArrayList<>();
