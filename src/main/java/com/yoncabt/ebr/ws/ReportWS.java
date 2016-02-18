@@ -70,18 +70,18 @@ public class ReportWS {
         synchronized (task) {
             if (task.getStarted() == 0) {//başlamamış
                 logManager.info("status query :" + task.getRequest().getUuid() + " :başlamış");
-                return ResponseEntity.status(HttpStatus.CREATED).body(task.getResponse());
+                return ResponseEntity.status(HttpStatus.CREATED).body(null);
             }
             if (task.getEnded() == 0) {//devam ediyor
                 logManager.info("status query :" + task.getRequest().getUuid() + " :devam ediyor");
-                return ResponseEntity.status(HttpStatus.PROCESSING).body(task.getResponse());
+                return ResponseEntity.status(HttpStatus.PROCESSING).body(null);
             }
             if (task.getException() != null) {
                 logManager.info("status query :" + task.getRequest().getUuid() + " :hata");
-                return ResponseEntity.status(420).body(task.getResponse());//420 Method Failure
+                return ResponseEntity.status(420).body(null);//420 Method Failure
             }
             logManager.info("status query :" + task.getRequest().getUuid() + " :bitmiş");
-            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
+            return ResponseEntity.status(HttpStatus.OK).body(null);
         }
     }
 
