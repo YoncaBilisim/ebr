@@ -223,6 +223,7 @@ public class YoncaJasperReports {
         try (FileInputStream fis = new FileInputStream(exportReportFile)) {
             reportLogger.logReport(uuid, params, outputFormat, fis);
         }
+        exportReportFile.delete();
     }
 
 
