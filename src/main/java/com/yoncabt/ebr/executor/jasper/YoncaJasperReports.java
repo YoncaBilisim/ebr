@@ -10,20 +10,16 @@ import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
-import com.yoncabt.ebr.logger.fs.FileSystemReportLogger;
 import com.yoncabt.ebr.util.ASCIIFier;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.DriverManager;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.inject.Singleton;
 import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JRException;
@@ -49,7 +45,6 @@ import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimpleWriterExporterOutput;
-import oracle.jdbc.OracleDriver;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -61,32 +56,6 @@ import org.springframework.stereotype.Component;
 @Singleton
 @Component
 public class YoncaJasperReports {
-    public static void test(String[] args) {
-        try {
-            System.setProperty("report.jrxml.path", "/home/myururdurmaz/reports");
-            System.setProperty("report.jasper.path", "/home/myururdurmaz/reports");
-            System.setProperty("report.out.path", "/tmp");
-
-            YoncaJasperReports jasperReports = new YoncaJasperReports();
-            jasperReports.reportLogger = new FileSystemReportLogger();
-
-            Map<String, Object> params = new HashMap<>();
-            params.put("CORP_NAME", "DENEM A.Ş");
-            params.put("LANG", 1);
-            params.put("LOGO_PATH", "/tmp/logo.png");
-            params.put("OPTIONAL_PARAMETER", " and rownum = 1");
-            params.put("TITLE_ONE", "Başılk 1");
-            params.put("TITLE_TWO", "balık 2");
-
-            DriverManager.registerDriver(new OracleDriver());
-            YoncaConnection con = new YoncaConnection(
-                    DriverManager.getConnection("jdbc:oracle:thin:@localhost:41521:yonca", "SMS_TEST", "SMS"));
-            com.yoncabt.ebr.executor.jasper.JasperReport jr = new com.yoncabt.ebr.executor.jasper.JasperReport(com.yoncabt.ebr.executor.jasper.JasperReport.getReportFile("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml"));
-            jasperReports.exportTo(params, ReportOutputFormat.odt, con, "en_US", "deneme rapor " + System.currentTimeMillis(), jr.loadDefinition());
-        } catch (Exception ex) {
-            Logger.getLogger(YoncaJasperReports.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
 
     @Autowired
     private ReportLogger reportLogger;
