@@ -6,6 +6,7 @@
 package com.yoncabt.ebr.ws;
 
 import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.ReportIDGenerator;
 import com.yoncabt.ebr.ReportRequest;
@@ -169,7 +170,7 @@ public class ReportWS {
             req.setDatasourceName("default");
         }
         if (StringUtils.isBlank(req.getLocale())) {
-            req.setLocale(ABYSConf.INSTANCE.getValue("report.locale.default", "tr_TR"));
+            req.setLocale(ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_DEFAULT_LOCALE, "tr_TR"));
         }
         if (StringUtils.isBlank(req.getUuid())) {
             req.setUuid(reportIDGenerator.generate());

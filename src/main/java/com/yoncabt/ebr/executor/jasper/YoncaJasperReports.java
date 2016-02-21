@@ -6,6 +6,7 @@
 package com.yoncabt.ebr.executor.jasper;
 
 import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
@@ -121,7 +122,7 @@ public class YoncaJasperReports {
                 /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
                 connection);
 
-        File outBase = new File(ABYSConf.INSTANCE.getValue("report.out.path", "/usr/local/reports/out"));
+        File outBase = new File(ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_OUT_PATH, "/usr/local/reports/out"));
         outBase.mkdirs();
         File exportReportFile = new File(outBase, uuid + "." + outputFormat.name());
         Exporter exporter;

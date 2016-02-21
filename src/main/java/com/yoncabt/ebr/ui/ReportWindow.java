@@ -25,6 +25,7 @@ import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
@@ -118,7 +119,7 @@ public class ReportWindow extends UI {
 
     private void uriFragmentChanged(String frag) {
         try {
-            String reportPath = ABYSConf.INSTANCE.getValue("report.jrxml.path", "/home/myururdurmaz/reports");
+            String reportPath = ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/home/myururdurmaz/reports");
             File reportDir = new File(reportPath);
             File reportFile = new File(reportDir, frag);
             if (reportFile.exists()) {
@@ -269,14 +270,14 @@ public class ReportWindow extends UI {
 
     private MenuBar createMenuBar() throws IOException, JRException {
         MenuBar mb = new MenuBar();
-        File dir = new File(ABYSConf.INSTANCE.getValue("report.jrxml.path", "/home/myururdurmaz/reports"));
+        File dir = new File(ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/home/myururdurmaz/reports"));
         createMenuBar(mb.addItem("Raporlar", null), dir);
         return mb;
     }
 
     private void createMenuBar(MenuBar.MenuItem mainItem, File dir) throws IOException, JRException {
         String menuText = dir.getName();
-        File folderConfig = new File(dir, "folder.ebr.json");
+        File folderConfig = new File(dir, EBRParams.FOLDER_EBR_JSON);
         if (folderConfig.exists()) {
             JSONObject jo = new JSONObject(FileUtils.readFileToString(folderConfig, "utf-8"));
             menuText = jo.optString("label", menuText);
@@ -293,7 +294,7 @@ public class ReportWindow extends UI {
                 String text = r.loadDefinition().getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");
-                    String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), ABYSConf.INSTANCE.getValue("report.jrxml.path", ""));
+                    String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, ""));
                     frag = StringUtils.removeStart(frag, "/");
                     getPage().setUriFragment(frag);
                 });
@@ -302,7 +303,7 @@ public class ReportWindow extends UI {
                 String text = r.loadDefinition().getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");
-                    String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), ABYSConf.INSTANCE.getValue("report.jrxml.path", ""));
+                    String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, ""));
                     frag = StringUtils.removeStart(frag, "/");
                     getPage().setUriFragment(frag);
                 });
