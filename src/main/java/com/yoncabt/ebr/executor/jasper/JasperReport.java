@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.executor.jasper;
 
-import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.ebr.executor.BaseReport;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
@@ -71,13 +71,13 @@ public class JasperReport extends BaseReport {
     }
 
     public static File getJasperFile(String fileName) {
-        File jasperBase = new File(ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/usr/local/reports"));
+        File jasperBase = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/usr/local/reports"));
         File jasperFile = new File(jasperBase, fileName.replace(".jrxml", ".jasper"));
         return jasperFile;
     }
 
     public static File getReportFile(String fileName) {
-        File jrxmlBase = new File(ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/usr/local/reports"));
+        File jrxmlBase = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/usr/local/reports"));
         File jrxmlFile = new File(jrxmlBase, fileName);
         return jrxmlFile;
     }

@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.executor.jasper;
 
-import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
@@ -69,7 +69,7 @@ public class YoncaJasperReports {
             String uuid,
             ReportDefinition reportDefinition) throws JRException, IOException {
         // önce genel parametreleri dolduralım. logo_path falan gibi
-        ABYSConf.INSTANCE.getMap().entrySet().stream().forEach((es) -> {
+        EBRConf.INSTANCE.getMap().entrySet().stream().forEach((es) -> {
             String key = es.getKey();
             if (key.startsWith("report.jrproperties.")) {
                 key = key.substring("report.jrproperties.".length());
@@ -122,7 +122,7 @@ public class YoncaJasperReports {
                 /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
                 connection);
 
-        File outBase = new File(ABYSConf.INSTANCE.getValue(EBRParams.REPORTS_OUT_PATH, "/usr/local/reports/out"));
+        File outBase = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_OUT_PATH, "/usr/local/reports/out"));
         outBase.mkdirs();
         File exportReportFile = new File(outBase, uuid + "." + outputFormat.name());
         Exporter exporter;
@@ -198,7 +198,7 @@ public class YoncaJasperReports {
 
 
     private void putTextParams(JRTextExporter exporter, Map<String, Object> params, String textTemplate) {
-        ABYSConf.INSTANCE.getMap().entrySet().stream().forEach((entry) -> {
+        EBRConf.INSTANCE.getMap().entrySet().stream().forEach((entry) -> {
             String key = entry.getKey();
             String value = entry.getValue();
             if (key.startsWith("report.texttemplate." + textTemplate)) {

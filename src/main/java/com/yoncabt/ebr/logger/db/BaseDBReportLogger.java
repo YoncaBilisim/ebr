@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.logger.db;
 
-import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class BaseDBReportLogger implements ReportLogger {
 
     @Override
     public void logReport(String uuid, Map<String, Object> reportParams, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
-        String table = ABYSConf.INSTANCE.getValue("report.dblogger.tableName", "log_reports");
+        String table = EBRConf.INSTANCE.getValue("report.dblogger.tableName", "log_reports");
         String sql = String.format("insert into %s ("
                 + "id, report, time_stamp, "
                 + "request, data) "

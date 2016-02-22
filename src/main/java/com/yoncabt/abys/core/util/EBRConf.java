@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +27,7 @@ import org.apache.commons.lang.StringUtils;
  *
  * @author myururdurmaz
  */
-public enum ABYSConf {
+public enum EBRConf {
 
     INSTANCE;
 
@@ -42,7 +43,7 @@ public enum ABYSConf {
     private String tableKeyColumn;
     private String tableValueColumn;
 
-    private ABYSConf() {
+    private EBRConf() {
         reloadLock = new Object();
         reload();
     }
@@ -69,7 +70,7 @@ public enum ABYSConf {
                         tmp.put(key, value);
                     }
                 } catch (IOException ex) {
-                    Logger.getLogger(ABYSConf.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(EBRConf.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
                 //System.out.println(confFile.getAbsolutePath() + ": OKUNMUYOR");
@@ -92,24 +93,33 @@ public enum ABYSConf {
      * @param tmp bilgilerin okunacağı map
      */
     private void reconnectToDb(Map<String, String> tmp) {
-        if (tmp.containsKey("abysconf.connection.url")) {
+        final String name = getClass().getSimpleName().toLowerCase(Locale.US);
+        if (tmp.containsKey(name + ".connection.url")) {
             try {
                 if (connection != null) {
                     connection.close();
                 }
-                DriverManager.registerDriver((Driver) Class.forName(tmp.get("abysconf.connection.driver")).newInstance());
-                connection = DriverManager.getConnection(tmp.get("abysconf.connection.url"), tmp.get("abysconf.connection.user"), tmp.get("abysconf.connection.pass"));
-                tableName = tmp.get("abysconf.connection.tableName");
-                tableKeyColumn = tmp.get("abysconf.connection.tableKeyColumn");
-                tableValueColumn = tmp.get("abysconf.connection.tableValueColumn");
+                DriverManager.registerDriver((Driver) Class.forName(tmp.get(name + ".connection.driver")).newInstance());
+                connection = DriverManager.getConnection(tmp.get(name + ".connection.url"), tmp.get(name + ".connection.user"), tmp.get(name + ".connection.pass"));
+                tableName = tmp.get(name + ".connection.tableName");
+                tableKeyColumn = tmp.get(name + ".connection.tableKeyColumn");
+                tableValueColumn = tmp.get(name + ".connection.tableValueColumn");
             } catch (SQLException | ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
-                Logger.getLogger(ABYSConf.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(EBRConf.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
+    /**
+     * bu metod diğer projelerimizde de bu class'ı kullanabilmek için
+     * @return
+     */
+    private String getConfFileName() {
+        String name = StringUtils.removeEnd(getClass().getSimpleName(), "Conf").toLowerCase(Locale.US);
+        return name + ".conf";
+    }
 
     private File getConfFile() {
-        String confFilePath = System.getProperty("abys_conf_file", new File(System.getProperty("user.home"), "abys.conf").getAbsolutePath());
+        String confFilePath = System.getProperty("conf_file", new File(System.getProperty("user.home"), getConfFileName()).getAbsolutePath());
         File confFile = new File(confFilePath);
         return confFile;
     }
@@ -171,7 +181,7 @@ public enum ABYSConf {
     }
 
     /**
-     * önce sistem pproperty denenir, yoksa abys.conf, o da yoksa veritabanından
+     * önce sistem pproperty denenir, yoksa conf dosyasına bakılır, o da yoksa veritabanından
      * denenir
      *
      * @param key
@@ -189,7 +199,7 @@ public enum ABYSConf {
                 try {
                     return getValueFromDB(key);
                 } catch (SQLException sqle) {
-                    Logger.getLogger(ABYSConf.class.getName()).log(Level.SEVERE, null, sqle);
+                    Logger.getLogger(EBRConf.class.getName()).log(Level.SEVERE, null, sqle);
                     //ne kadar hoşuma gitmse de burda değeri döneceğim
                     return defaultValue;
                 } catch (ValueNotFoundException ex2) {

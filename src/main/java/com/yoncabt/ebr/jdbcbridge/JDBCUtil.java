@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.jdbcbridge;
 
-import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRConf;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -30,10 +30,9 @@ public class JDBCUtil {
     }
 
     public YoncaConnection connect(String dataSource) throws SQLException {
-        return connect(
-                ABYSConf.INSTANCE.getValue("report.datasource." + dataSource + ".driver", ""),
-                ABYSConf.INSTANCE.getValue("report.datasource." + dataSource + ".url", ""),
-                ABYSConf.INSTANCE.getValue("report.datasource." + dataSource + ".user", ""),
-                ABYSConf.INSTANCE.getValue("report.datasource." + dataSource + ".pass", ""));
+        return connect(EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".driver", ""),
+                EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".url", ""),
+                EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".user", ""),
+                EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".pass", ""));
     }
 }

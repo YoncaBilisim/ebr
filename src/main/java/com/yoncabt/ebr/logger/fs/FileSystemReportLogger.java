@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.logger.fs;
 
-import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.File;
@@ -31,9 +31,9 @@ public class FileSystemReportLogger implements ReportLogger {
 
     @Override
     public void logReport(String uuid, Map<String, Object> reportParams, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
-        File saveDir = new File(ABYSConf.INSTANCE.getValue("report.fslogger.path", "/tmp"));
+        File saveDir = new File(EBRConf.INSTANCE.getValue("report.fslogger.path", "/tmp"));
         saveDir.mkdirs();
-        boolean compress = ABYSConf.INSTANCE.getValue("report.fslogger.compress", true);
+        boolean compress = EBRConf.INSTANCE.getValue("report.fslogger.compress", true);
         OutputStream osReport;
         OutputStream osParams;
         if (compress) {
@@ -55,7 +55,7 @@ public class FileSystemReportLogger implements ReportLogger {
     @Override
     public byte[] getReportData(String uuid) throws IOException {
         //burada sıkıştırma özelliği açıkken kpatılmış olabilir diye kontrol yapıyorum
-        File saveDir = new File(ABYSConf.INSTANCE.getValue("report.fslogger.path", "/tmp"));
+        File saveDir = new File(EBRConf.INSTANCE.getValue("report.fslogger.path", "/tmp"));
         File reportFile = new File(saveDir, uuid + ".gz");
         if (reportFile.exists()) {
             try (FileInputStream fis = new FileInputStream(reportFile);

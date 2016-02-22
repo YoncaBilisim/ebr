@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.executor.jasper;
 
-import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRConf;
 import net.sf.jasperreports.export.SimpleTextReportConfiguration;
 
 /**
@@ -22,22 +22,22 @@ public class YoncaTextReportConfiguration extends SimpleTextReportConfiguration 
 
     @Override
     public Float getCharWidth() {
-        return ABYSConf.INSTANCE.getValue("report.texttemplate." + template + ".CHAR_WITDH", super.getCharWidth());
+        return EBRConf.INSTANCE.getValue("report.texttemplate." + template + ".CHAR_WITDH", super.getCharWidth());
     }
 
     @Override
     public Float getCharHeight() {
-        return ABYSConf.INSTANCE.getValue("report.texttemplate." + template + ".CHAR_HEIGHT", super.getCharHeight());
+        return EBRConf.INSTANCE.getValue("report.texttemplate." + template + ".CHAR_HEIGHT", super.getCharHeight());
     }
 
     @Override
     public Integer getPageWidthInChars() {
-        return ABYSConf.INSTANCE.getValue("report.texttemplate." + template + ".PAGE_WIDTH_CHARS", super.getPageWidthInChars());
+        return EBRConf.INSTANCE.getValue("report.texttemplate." + template + ".PAGE_WIDTH_CHARS", super.getPageWidthInChars());
     }
 
     @Override
     public Integer getPageHeightInChars() {
-        return ABYSConf.INSTANCE.getValue("report.texttemplate." + template + ".PAGE_HEIGHT_CHARS", super.getPageHeightInChars());
+        return EBRConf.INSTANCE.getValue("report.texttemplate." + template + ".PAGE_HEIGHT_CHARS", super.getPageHeightInChars());
     }
 
 }

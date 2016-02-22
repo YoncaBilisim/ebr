@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.executor.jasper;
 
-import com.yoncabt.abys.core.util.ABYSConf;
+import com.yoncabt.abys.core.util.EBRConf;
 import net.sf.jasperreports.export.TextExporterConfiguration;
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -23,12 +23,12 @@ public class YoncaTextExporterConfiguration implements TextExporterConfiguration
 
     @Override
     public String getPageSeparator() {
-        return StringEscapeUtils.unescapeJava(ABYSConf.INSTANCE.getValue("report.texttemplate." + template + ".BETWEEN_PAGES_TEXT", "\n\n"));
+        return StringEscapeUtils.unescapeJava(EBRConf.INSTANCE.getValue("report.texttemplate." + template + ".BETWEEN_PAGES_TEXT", "\n\n"));
     }
 
     @Override
     public String getLineSeparator() {
-        return StringEscapeUtils.unescapeJava(ABYSConf.INSTANCE.getValue("report.texttemplate." + template + ".LINE_SEPARATOR", "\n"));
+        return StringEscapeUtils.unescapeJava(EBRConf.INSTANCE.getValue("report.texttemplate." + template + ".LINE_SEPARATOR", "\n"));
     }
 
     @Override
