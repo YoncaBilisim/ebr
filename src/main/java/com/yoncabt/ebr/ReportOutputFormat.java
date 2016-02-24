@@ -5,6 +5,8 @@
  */
 package com.yoncabt.ebr;
 
+import org.springframework.http.MediaType;
+
 /**
  *
  * @author myururdurmaz
@@ -34,6 +36,10 @@ public enum ReportOutputFormat {
 
     public String getMimeType() {
         return mimeType;
+    }
+
+    public MediaType getMediaType() {
+        return MediaType.parseMediaType(mimeType);
     }
 
     public boolean isText() {

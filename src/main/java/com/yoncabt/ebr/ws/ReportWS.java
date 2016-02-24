@@ -9,6 +9,7 @@ import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.ReportIDGenerator;
+import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.executor.ReportList;
@@ -127,8 +128,7 @@ public class ReportWS {
 
     @RequestMapping(
             value = {"/ws/1.0/output/{requestId}"},
-            method = RequestMethod.GET,
-            produces = "application/octet-stream")
+            method = RequestMethod.GET)
     public ResponseEntity<byte[]> output(
             @PathVariable("requestId") String requestId
     ) throws IOException {
@@ -138,7 +138,11 @@ public class ReportWS {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         logManager.info("output :" + task.getRequest().getUuid());
-        return ResponseEntity.status(HttpStatus.OK).body(reportLogger.getReportData(requestId));
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(ReportOutputFormat.valueOf(task.getRequest().getExtension()).getMediaType())
+                .lastModified(task.getEnded())
+                .header("Content-Disposition", "inline; filename=" + requestId + "." + task.getRequest().getExtension())
+                .body(reportLogger.getReportData(requestId));
     }
 
     @RequestMapping(
