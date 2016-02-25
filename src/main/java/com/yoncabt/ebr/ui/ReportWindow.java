@@ -44,8 +44,10 @@ import java.sql.Types;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import net.sf.jasperreports.engine.JRException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -182,10 +184,21 @@ public class ReportWindow extends UI {
     private void fillTheGrid() throws SQLException {
         gridLayout.removeComponent(grid);
         createGrid();
+        for (ReportParam reportParam : reportDefinition.getReportParams()) {
+            if(reportParam.isRaw()) {
+                String value = (String) findFormField(reportParam.getName()).getValue();
+                value = StringEscapeUtils.escapeSql(value);
+                Pattern pattern = Pattern.compile(":\\b" + reportParam.getName() + "\\b");
+                sql = pattern.matcher(sql).replaceAll(value);
+            }
+        }
         JDBCNamedParameters p = new JDBCNamedParameters(sql);
         for (ReportParam reportParam : reportDefinition.getReportParams()) {
             Class type = reportParam.getType();
-            if (type == Integer.class) {
+            if(reportParam.isRaw()) {
+                //
+            }
+            else if (type == Integer.class) {
                 String value = (String) findFormField(reportParam.getName()).getValue();
                 if (!StringUtils.isEmpty(value)) {
                     p.set(reportParam.getName(), Integer.parseInt(value));

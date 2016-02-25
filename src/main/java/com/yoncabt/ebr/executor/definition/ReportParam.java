@@ -19,6 +19,7 @@ public class ReportParam<T> {
     private T min;
     private T max;
     private T defaultValue;
+    private boolean raw;
 
     public ReportParam(Class<T> type) {
         this.type = type;
@@ -122,5 +123,19 @@ public class ReportParam<T> {
      */
     public void setDefaultValue(T defaultValue) {
         this.defaultValue = defaultValue;
+    }
+
+    /**
+     * @return the raw
+     */
+    public boolean isRaw() {
+        return raw;
+    }
+
+    /**
+     * @param raw the raw to set
+     */
+    public void setRaw(boolean raw) {
+        this.raw = raw;
     }
 }

@@ -24,6 +24,13 @@ public abstract class BaseReport {
     public BaseReport() {
     }
 
+    private void readCommon(ReportParam<?> rp, JSONObject field) {
+        rp.setRaw(field.optBoolean("raw", false));
+        rp.setLabel(field.getString("label"));
+        rp.setName(field.getString("name"));
+        rp.setFormat(field.optString("format", null));
+    }
+
     public ReportDefinition loadDefinition(File reportFile, File jsonFile) throws AssertionError, IOException, JSONException {
         ReportDefinition ret = new ReportDefinition(reportFile);
         if (!jsonFile.exists()) {
@@ -44,25 +51,21 @@ public abstract class BaseReport {
                     case "date":
                         {
                             ReportParam<Date> rp = new ReportParam<>(Date.class);
-                            rp.setLabel(field.getString("label"));
-                            rp.setName(field.getString("name"));
-                            rp.setFormat(field.getString("format"));
+                            readCommon(rp, field);
                             ret.getReportParams().add(rp);
                             break;
                         }
                     case "string":
                         {
                             ReportParam<String> rp = new ReportParam<>(String.class);
-                            rp.setLabel(field.getString("label"));
-                            rp.setName(field.getString("name"));
+                            readCommon(rp, field);
                             ret.getReportParams().add(rp);
                             break;
                         }
                     case "int":
                         {
                             ReportParam<Integer> rp = new ReportParam<>(Integer.class);
-                            rp.setLabel(field.getString("label"));
-                            rp.setName(field.getString("name"));
+                            readCommon(rp, field);
                             int min = field.has("min") ? field.getInt("min") : Integer.MIN_VALUE;
                             int max = field.has("max") ? field.getInt("max") : Integer.MAX_VALUE;
                             rp.setMax(max);
@@ -73,8 +76,7 @@ public abstract class BaseReport {
                     case "long":
                         {
                             ReportParam<Long> rp = new ReportParam<>(Long.class);
-                            rp.setLabel(field.getString("label"));
-                            rp.setName(field.getString("name"));
+                            readCommon(rp, field);
                             long min = field.has("min") ? field.getLong("min") : Long.MIN_VALUE;
                             long max = field.has("max") ? field.getLong("max") : Long.MAX_VALUE;
                             rp.setMax(max);
