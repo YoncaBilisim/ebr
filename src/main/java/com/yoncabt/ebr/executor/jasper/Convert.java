@@ -20,7 +20,7 @@ public class Convert {
      * @return
      */
     public static Object to(Object val, Class<?> valueClass) {
-        if(val.getClass() == valueClass) {
+        if(valueClass.isInstance(val)) {
             return val;
         }
         if(ResourceBundle.class == valueClass) { //bunu dışarı çıkartayım
