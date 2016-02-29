@@ -191,7 +191,7 @@ public class YoncaJasperReports {
             case txt:
                 exporter = new JRTextExporter();
                 output = new SimpleWriterExporterOutput(exportReportFile);
-                putTextParams((JRTextExporter)exporter, params, "SUITABLE");
+                putTextParams((JRTextExporter) exporter, params, "SUITABLE");
                 break;
             default:
                 throw new AssertionError(outputFormat.toString() + " not supported");
@@ -200,9 +200,9 @@ public class YoncaJasperReports {
 
         exporter.setExporterOutput(output);
         exporter.exportReport();
-        if(outputFormat.isText() && !"utf-8".equals(reportDefinition.getTextEncoding())) {
+        if (outputFormat.isText() && !"utf-8".equals(reportDefinition.getTextEncoding())) {
             String reportData = FileUtils.readFileToString(exportReportFile, "utf-8");
-            if("ascii".equals(reportDefinition.getTextEncoding())) {
+            if ("ascii".equals(reportDefinition.getTextEncoding())) {
                 FileUtils.write(exportReportFile, ASCIIFier.ascii(reportData));
             } else {
                 FileUtils.write(exportReportFile, reportData, reportDefinition.getTextEncoding());
@@ -214,7 +214,6 @@ public class YoncaJasperReports {
         }
         exportReportFile.delete();
     }
-
 
     private void putTextParams(JRTextExporter exporter, Map<String, Object> params, String textTemplate) {
         EBRConf.INSTANCE.getMap().entrySet().stream().forEach((entry) -> {
