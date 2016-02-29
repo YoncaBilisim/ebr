@@ -10,9 +10,30 @@ package com.yoncabt.abys.core.util;
  * @author myururdurmaz
  */
 public class EBRParams {
+
+    /**
+     * {@value }
+     */
     public static final String REPORTS_JRXML_PATH = "report.jrxml.path";
-    public static String REPORTS_OUT_PATH = "report.out.path";
-    public static String FOLDER_EBR_JSON = "folder.ebr.json";
-    public static String REPORTS_DEFAULT_LOCALE = "reports.locale.default";
+    /**
+     * {@value }
+     */
+    public static final String REPORTS_OUT_PATH = "report.out.path";
+    /**
+     * {@value }
+     */
+    public static final String FOLDER_EBR_JSON = "folder.ebr.json";
+    /**
+     * {@value }
+     */
+    public static final String REPORTS_DEFAULT_LOCALE = "reports.locale.default";
+    /**
+     * {@value }
+     */
+    public static final String REPORTS_VIRTUALIZER_DIRECTORY = "reports.virtualizer.directory";
+    /**
+     * {@value }
+     */
+    public static final String REPORTS_VIRTUALIZER_MAXSIZE = "reports.virtualizer.maxsize";
 
 }

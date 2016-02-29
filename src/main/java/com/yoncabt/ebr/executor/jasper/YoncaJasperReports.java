@@ -39,6 +39,8 @@ import net.sf.jasperreports.engine.export.oasis.JROdsExporter;
 import net.sf.jasperreports.engine.export.oasis.JROdtExporter;
 import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter;
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
+import net.sf.jasperreports.engine.fill.JRAbstractLRUVirtualizer;
+import net.sf.jasperreports.engine.fill.JRFileVirtualizer;
 import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.export.Exporter;
 import net.sf.jasperreports.export.ExporterOutput;
@@ -120,11 +122,17 @@ public class YoncaJasperReports {
         params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
         params.put(JRParameter.REPORT_LOCALE, parseLocale(locale));
 
-        JasperReport jasperReport = (JasperReport)JRLoader.loadObject(com.yoncabt.ebr.executor.jasper.JasperReport.compileIfRequired(jrxmlFile));
-        for(JRParameter param : jasperReport.getParameters()) {
+        String virtDir = EBRConf.INSTANCE.getValue(EBRParams.REPORTS_VIRTUALIZER_DIRECTORY, "/tmp/ebr/virtualizer");
+        int maxSize = EBRConf.INSTANCE.getValue(EBRParams.REPORTS_VIRTUALIZER_MAXSIZE, Integer.MAX_VALUE);
+        JRAbstractLRUVirtualizer virtualizer = new JRFileVirtualizer(maxSize, virtDir);
+        params.put(JRParameter.REPORT_VIRTUALIZER, virtualizer);
+
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(com.yoncabt.ebr.executor.jasper.JasperReport.compileIfRequired(jrxmlFile));
+        for (JRParameter param : jasperReport.getParameters()) {
             Object val = params.get(param.getName());
-            if(val == null)
+            if (val == null) {
                 continue;
+            }
             params.put(param.getName(), Convert.to(val, param.getValueClass()));
         }
 
