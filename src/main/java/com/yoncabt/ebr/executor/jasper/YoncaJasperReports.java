@@ -61,6 +61,17 @@ public class YoncaJasperReports {
     @Autowired
     private ReportLogger reportLogger;
 
+    /**
+     * new Locale("tr_TR") not running for decimal formats
+     *
+     * @param locale
+     * @return
+     */
+    private Locale parseLocale(String locale) {
+        String[] p = locale.split("_");
+        return new Locale(p[0], p[1]);
+    }
+
     public void exportTo(
             Map<String, Object> params,
             ReportOutputFormat outputFormat,
@@ -107,7 +118,7 @@ public class YoncaJasperReports {
 
         // FIXME yerelleştime dosyaları buradan okunacak
         params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
-        params.put(JRParameter.REPORT_LOCALE, new Locale("tr_TR"));
+        params.put(JRParameter.REPORT_LOCALE, parseLocale(locale));
 
         JasperReport jasperReport = (JasperReport)JRLoader.loadObject(com.yoncabt.ebr.executor.jasper.JasperReport.compileIfRequired(jrxmlFile));
         for(JRParameter param : jasperReport.getParameters()) {
