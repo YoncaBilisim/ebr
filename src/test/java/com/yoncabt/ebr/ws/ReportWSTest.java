@@ -66,23 +66,17 @@ public class ReportWSTest {
         ReportRequest req = new ReportRequest();
         req.setAsync(false);
         req.setDatasourceName("maski-test");
-        //req.setEmail("myururdurmaz@gmail.com");
         req.setExtension("pdf");
         req.setLocale("tr_TR");
-        req.setReport("İş Emri Raporları/Kelepce Muhur Raporu/Kelepce_Muhur_Raporu.jrxml");
+        req.setReport("olmayan rapor.jrxml");
         Map<String, Object> params = new HashMap<>();
         params.put("CORP_NAME", "DENEM A.Ş");
         params.put("LANG", 1);
-        params.put("LOGO_PATH", "/tmp/logo.png");
-        params.put("OPTIONAL_PARAMETER", " and rownum = 1");
-        params.put("TITLE_ONE", "Başılk 1");
-        params.put("TITLE_TWO", "balık 2");
         req.setReportParams(params);
-
         MockMvcBuilders.standaloneSetup(reportWS)
                 .build()
                 .perform(post("/request").accept(MediaType.APPLICATION_JSON).content(new JSONObject(req).toString()))
-                .andExpect(status().isOk());
+                .andExpect(status().isNotFound());
 
     }
 
