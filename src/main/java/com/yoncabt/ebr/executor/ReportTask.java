@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Scope("prototype")
-public class ReportTask implements Runnable {
+public class ReportTask implements Runnable, Comparable<ReportTask> {
 
     private volatile Status status = Status.WAIT;
 
@@ -140,5 +140,10 @@ public class ReportTask implements Runnable {
      */
     public Status getStatus() {
         return status;
+    }
+
+    @Override
+    public int compareTo(ReportTask o) {
+        return Long.valueOf(this.getStarted()).compareTo(o.getStarted());
     }
 }

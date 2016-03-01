@@ -20,6 +20,8 @@ import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
 import com.yoncabt.ebr.executor.ReportTask;
 import com.yoncabt.ebr.ws.ReportWS;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.PostConstruct;
@@ -87,27 +89,33 @@ public class ReportStatusWindow extends Window {
         return ret;
     }
 
+    @SuppressWarnings("ThrowableResultIgnored")
     private void fillTheGrid() {
         grid.getSelectionModel().reset();
         grid.getContainerDataSource().removeAllItems();
         ResponseEntity<List<String>> reports = reportWS.reports();
+        List<ReportTask> reportTasks = new ArrayList<>();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         for (int i = 0; i < reports.getBody().size(); i++) {
             String id = reports.getBody().get(i);
             ResponseEntity<ReportTask> task = reportWS.detail(id);
+            reportTasks.add(task.getBody());
+        }
+        Collections.sort(reportTasks);
+        reportTasks.stream().forEach((ReportTask task) -> {
             grid.addRow(
-                    task.getBody().getRequest().getUuid(),
-                    task.getBody().getRequest().getDatasourceName(),
-                    task.getBody().getRequest().getReport(),
-                    task.getBody().getRequest().getExtension(),
-                    task.getBody().getStarted() == 0 ? "" : df.format(new Date(task.getBody().getStarted())),
-                    task.getBody().getEnded() == 0 ? "" : df.format(new Date(task.getBody().getEnded())),
+                    task.getRequest().getUuid(),
+                    task.getRequest().getDatasourceName(),
+                    task.getRequest().getReport(),
+                    task.getRequest().getExtension(),
+                    task.getStarted() == 0 ? "" : df.format(new Date(task.getStarted())),
+                    task.getEnded() == 0 ? "" : df.format(new Date(task.getEnded())),
                     "İPT",
                     "GSTR",
-                    task.getBody().getStatus().name(),
-                    task.getBody().getException() + ""
+                    task.getStatus().name(),
+                    task.getException() + ""
             );
-        }
+        });
         grid.recalculateColumnWidths();
     }
 }
