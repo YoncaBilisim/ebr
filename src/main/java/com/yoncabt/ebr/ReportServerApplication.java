@@ -1,11 +1,18 @@
 package com.yoncabt.ebr;
 
 import com.yoncabt.abys.core.util.EBRConf;
+import com.yoncabt.abys.core.util.EBRParams;
+import com.yoncabt.ebr.logger.ReportLogger;
+import com.yoncabt.ebr.logger.fs.FileSystemReportLogger;
 import com.yoncabt.ebr.util.VersionUtil;
 import java.util.Properties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -13,9 +20,26 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @SpringBootApplication
 public class ReportServerApplication {
 
+    @Autowired
+    private ApplicationContext context;
+
     public static void main(String[] args) {
         VersionUtil.print();
         SpringApplication.run(ReportServerApplication.class, args);
+    }
+
+    @Bean
+    @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public ReportLogger reportLogger() {
+        String impl = EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_IMPL, FileSystemReportLogger.class.getName());
+        ReportLogger ret;
+        try {
+            ret = (ReportLogger) Class.forName(impl).newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+            throw new Error(ex);
+        }
+        context.getAutowireCapableBeanFactory().autowireBean(ret);
+        return ret;
     }
 
     @Bean

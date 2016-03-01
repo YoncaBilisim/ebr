@@ -6,7 +6,9 @@
 package com.yoncabt.ebr.logger.fs;
 
 import com.yoncabt.abys.core.util.EBRConf;
+import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,20 +22,20 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
-import org.springframework.stereotype.Component;
 
 /**
  *
  * @author myururdurmaz
  */
-@Component
 public class FileSystemReportLogger implements ReportLogger {
 
     @Override
-    public void logReport(String uuid, Map<String, Object> reportParams, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
-        File saveDir = new File(EBRConf.INSTANCE.getValue("report.fslogger.path", "/tmp"));
+    public void logReport(ReportRequest request, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
+        String uuid = request.getUuid();
+        Map<String, Object> reportParams = request.getReportParams();
+        File saveDir = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_FSLOGGER_PATH, "/tmp"));
         saveDir.mkdirs();
-        boolean compress = EBRConf.INSTANCE.getValue("report.fslogger.compress", true);
+        boolean compress = EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_FSLOGGER_COMPRESS, true);
         OutputStream osReport;
         OutputStream osParams;
         if (compress) {
@@ -55,7 +57,7 @@ public class FileSystemReportLogger implements ReportLogger {
     @Override
     public byte[] getReportData(String uuid) throws IOException {
         //burada sıkıştırma özelliği açıkken kpatılmış olabilir diye kontrol yapıyorum
-        File saveDir = new File(EBRConf.INSTANCE.getValue("report.fslogger.path", "/tmp"));
+        File saveDir = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_FSLOGGER_PATH, "/tmp"));
         File reportFile = new File(saveDir, uuid + ".gz");
         if (reportFile.exists()) {
             try (FileInputStream fis = new FileInputStream(reportFile);

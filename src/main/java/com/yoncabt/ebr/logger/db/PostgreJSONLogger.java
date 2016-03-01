@@ -6,16 +6,16 @@
 package com.yoncabt.ebr.logger.db;
 
 import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.ReportRequest;
+import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 
 /**
  *
@@ -41,8 +41,9 @@ public class PostgreJSONLogger implements ReportLogger {
     private void destroy() throws SQLException {
         connection.close();
     }
+
     @Override
-    public void logReport(String uuid, Map<String, Object> reportParams, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
+    public void logReport(ReportRequest request, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

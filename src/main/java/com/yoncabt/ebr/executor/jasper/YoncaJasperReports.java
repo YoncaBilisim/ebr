@@ -8,6 +8,7 @@ package com.yoncabt.ebr.executor.jasper;
 import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
@@ -75,12 +76,14 @@ public class YoncaJasperReports {
     }
 
     public void exportTo(
-            Map<String, Object> params,
+            ReportRequest request,
             ReportOutputFormat outputFormat,
             YoncaConnection connection,
-            String locale,
-            String uuid,
             ReportDefinition reportDefinition) throws JRException, IOException {
+        Map<String, Object> params = request.getReportParams();
+        String locale = request.getLocale();
+        String uuid = request.getUuid();
+
         // önce genel parametreleri dolduralım. logo_path falan gibi
         EBRConf.INSTANCE.getMap().entrySet().stream().forEach((es) -> {
             String key = es.getKey();
@@ -210,7 +213,7 @@ public class YoncaJasperReports {
         }
 
         try (FileInputStream fis = new FileInputStream(exportReportFile)) {
-            reportLogger.logReport(uuid, params, outputFormat, fis);
+            reportLogger.logReport(request, outputFormat, fis);
         }
         exportReportFile.delete();
     }

@@ -6,9 +6,9 @@
 package com.yoncabt.ebr.logger;
 
 import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.ReportRequest;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 /**
  *
@@ -16,8 +16,7 @@ import java.util.Map;
  */
 public interface ReportLogger {
 
-    void logReport(String uuid,
-            Map<String, Object> reportParams,
+    void logReport(ReportRequest request,
             ReportOutputFormat outputFormat,
             InputStream reportData) throws IOException;
 

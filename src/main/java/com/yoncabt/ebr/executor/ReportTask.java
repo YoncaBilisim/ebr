@@ -72,7 +72,7 @@ public class ReportTask implements Runnable {
             JasperReport jr = new JasperReport(JasperReport.getReportFile(request.getReport()));
             ReportDefinition definition = jr.loadDefinition();
             definition.setDataSource(request.getDatasourceName());
-            jasperReports.exportTo(request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid(), definition);
+            jasperReports.exportTo(request, ReportOutputFormat.valueOf(request.getExtension()), connection, definition);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             if (!StringUtils.isBlank(request.getEmail())) {
                 mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));

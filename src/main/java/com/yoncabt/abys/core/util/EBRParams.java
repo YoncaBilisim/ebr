@@ -35,5 +35,21 @@ public class EBRParams {
      * {@value }
      */
     public static final String REPORTS_VIRTUALIZER_MAXSIZE = "reports.virtualizer.maxsize";
+    /**
+     * {@value }
+     */
+    public static final String REPORT_LOGGER_IMPL = "report.logger.impl";
+    /**
+     * {@value }
+     */
+    public static final String REPORT_LOGGER_DBLOGGER_TABLENAME = "report.logger.dblogger.tableName";
+    /**
+     * {@value }
+     */
+    public static final String REPORT_LOGGER_FSLOGGER_PATH = "report.logger.fslogger.path";
+    /**
+     * {@value }
+     */
+    public static final String REPORT_LOGGER_FSLOGGER_COMPRESS = "report.logger.fslogger.compress";
 
 }
