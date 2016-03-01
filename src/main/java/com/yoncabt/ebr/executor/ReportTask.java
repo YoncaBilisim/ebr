@@ -67,7 +67,7 @@ public class ReportTask implements Runnable {
         response = new ReportResponse();
         response.setUuid(request.getUuid());
         try {
-            connection = jdbcutil.connect(request.getDatasourceName());
+            connection = jdbcutil.connect(request);
             //FIXME support for sql
             JasperReport jr = new JasperReport(JasperReport.getReportFile(request.getReport()));
             ReportDefinition definition = jr.loadDefinition();

@@ -56,6 +56,8 @@ public class ReportRequest {
 
     private String locale;
 
+    private String user;
+
     /**
      * @return the reportParams
      */
@@ -204,4 +206,18 @@ public class ReportRequest {
 //        JSONObject jo = new JSONObject(req);
 //        System.out.println(jo.toString());
 //    }
+
+    /**
+     * @return the user
+     */
+    public String getUser() {
+        return user;
+    }
+
+    /**
+     * @param user the user to set
+     */
+    public void setUser(String user) {
+        this.user = user;
+    }
 }
