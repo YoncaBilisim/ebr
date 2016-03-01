@@ -191,22 +191,33 @@ public enum EBRConf {
     private String getValueFromAll(String key, String defaultValue) {
         reloadIfRequired();
         try {
-            return getValueFromSystem(key);
-        } catch (ValueNotFoundException ex) {
+            return getValueFromEnv(key);
+        } catch (ValueNotFoundException envex) {
             try {
-                return getValueFromMap(key);
-            } catch (ValueNotFoundException ex1) {
+                return getValueFromSystem(key);
+            } catch (ValueNotFoundException ex) {
                 try {
-                    return getValueFromDB(key);
-                } catch (SQLException sqle) {
-                    Logger.getLogger(EBRConf.class.getName()).log(Level.SEVERE, null, sqle);
-                    //ne kadar hoşuma gitmse de burda değeri döneceğim
-                    return defaultValue;
-                } catch (ValueNotFoundException ex2) {
-                    return defaultValue;
+                    return getValueFromMap(key);
+                } catch (ValueNotFoundException ex1) {
+                    try {
+                        return getValueFromDB(key);
+                    } catch (SQLException sqle) {
+                        Logger.getLogger(EBRConf.class.getName()).log(Level.SEVERE, null, sqle);
+                        //ne kadar hoşuma gitmse de burda değeri döneceğim
+                        return defaultValue;
+                    } catch (ValueNotFoundException ex2) {
+                        return defaultValue;
+                    }
                 }
             }
         }
+    }
+
+    private String getValueFromEnv(String key) throws ValueNotFoundException {
+        if (System.getenv().containsKey(key)) {
+            return System.getenv(key);
+        }
+        throw new ValueNotFoundException();
     }
 
     private String getValueFromSystem(String key) throws ValueNotFoundException {
