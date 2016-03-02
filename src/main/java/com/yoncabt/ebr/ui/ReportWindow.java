@@ -223,7 +223,7 @@ public class ReportWindow extends UI {
             }
         }
 
-        try (YoncaConnection con = jdbcutil.connect(reportDefinition.getDataSource());
+        try (YoncaConnection con = jdbcutil.connect(StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default"));
                 PreparedStatement st = p.prepare(con);
                 ResultSet res = st.executeQuery()) {
             ResultSetMetaData md = res.getMetaData();
