@@ -51,22 +51,22 @@ public class JDBCUtil {
     public YoncaConnection connect(String dataSource, ReportRequest req) throws SQLException {
         final String driver = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".driver", "");
         if (StringUtils.isEmpty(driver)) {
-            throw new IllegalArgumentException("driver not found");
+            throw new IllegalArgumentException(dataSource + " driver not found");
         }
 
         final String url = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".url", "");
         if (StringUtils.isEmpty(url)) {
-            throw new IllegalArgumentException("url not found");
+            throw new IllegalArgumentException(dataSource + " url not found");
         }
 
         final String user = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".user", "");
         if (StringUtils.isEmpty(user)) {
-            throw new IllegalArgumentException("user not found");
+            throw new IllegalArgumentException(dataSource + " user not found");
         }
 
         final String pass = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".pass", "");
         if (StringUtils.isEmpty(pass)) {
-            throw new IllegalArgumentException("pass not found");
+            throw new IllegalArgumentException(dataSource + " pass not found");
         }
 
         return connect(driver, url, user, pass, req);
