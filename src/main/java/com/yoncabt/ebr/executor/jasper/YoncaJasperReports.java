@@ -19,7 +19,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -51,6 +50,7 @@ import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimpleWriterExporterOutput;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -64,17 +64,6 @@ public class YoncaJasperReports {
 
     @Autowired
     private ReportLogger reportLogger;
-
-    /**
-     * new Locale("tr_TR") not running for decimal formats
-     *
-     * @param locale
-     * @return
-     */
-    private Locale parseLocale(String locale) {
-        String[] p = locale.split("_");
-        return new Locale(p[0], p[1]);
-    }
 
     public void exportTo(
             ReportRequest request,
@@ -124,7 +113,7 @@ public class YoncaJasperReports {
 
         // FIXME yerelleştime dosyaları buradan okunacak
         params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
-        params.put(JRParameter.REPORT_LOCALE, parseLocale(locale));
+        params.put(JRParameter.REPORT_LOCALE, LocaleUtils.toLocale(locale));
 
         String virtDir = EBRConf.INSTANCE.getValue(EBRParams.REPORTS_VIRTUALIZER_DIRECTORY, "/tmp/ebr/virtualizer");
         int maxSize = EBRConf.INSTANCE.getValue(EBRParams.REPORTS_VIRTUALIZER_MAXSIZE, Integer.MAX_VALUE);
