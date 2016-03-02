@@ -13,6 +13,7 @@ import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
 import com.yoncabt.ebr.util.ASCIIFier;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -138,6 +139,7 @@ public class YoncaJasperReports {
             }
             params.put(param.getName(), Convert.to(val, param.getValueClass()));
         }
+        reportLogger.logReport(request, outputFormat, new ByteArrayInputStream(new byte[0]));
 
         JasperPrint jasperPrint = JasperFillManager.fillReport(
                 jasperReport,

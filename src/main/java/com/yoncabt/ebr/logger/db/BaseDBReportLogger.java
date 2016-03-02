@@ -61,6 +61,7 @@ public class BaseDBReportLogger implements ReportLogger {
     private void init() {
         try {
             connection = jdbcutil.connect("dblogger");
+            connection.setAutoCommit(false);
         } catch (SQLException ex) {
             throw new Error(ex);
         }
@@ -74,7 +75,20 @@ public class BaseDBReportLogger implements ReportLogger {
     @Override
     public void logReport(ReportRequest request, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
         String table = EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_DBLOGGER_TABLENAME, "log_reports");
-        String sql = String.format("insert into %s ("
+        String sql = String.format("update %s set report_data = ? where id = ?", table);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setBinaryStream(1, reportData);
+            ps.setString(2, request.getUuid());
+            if (ps.executeUpdate() == 1) {// daha önce loglanmış bir rapor ise sadece güncelle
+                return;
+            }
+            connection.commit();
+        } catch (SQLException ex) {
+            Logger.getLogger(BaseDBReportLogger.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        sql = String.format("insert into %s ("
                 + "id, report_name, time_stamp, "
                 + "request_params, report_data, file_extension,"
                 + "data_source_name, email, report_locale,"
@@ -92,7 +106,7 @@ public class BaseDBReportLogger implements ReportLogger {
 
                 JSONObject jo = new JSONObject(request.getReportParams());
                 ps.setString(4, jo.toString(4));
-                ps.setBlob(5, reportData);
+                ps.setBinaryStream(5, reportData);
                 ps.setString(6, request.getExtension());
 
                 ps.setString(7, request.getDatasourceName());
@@ -102,6 +116,7 @@ public class BaseDBReportLogger implements ReportLogger {
                 ps.setString(10, request.getUser());
 
                 ps.executeUpdate();
+                connection.commit();
             }
         } catch (SQLException ex) {
             Logger.getLogger(BaseDBReportLogger.class.getName()).log(Level.SEVERE, null, ex);
