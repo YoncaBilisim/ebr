@@ -13,5 +13,7 @@ public enum Status {
     WAIT,
     RUN,
     EXCEPTION,
-    CANCEL, FINISH,
+    CANCEL,
+    FINISH,
+    SCHEDULED,
 }

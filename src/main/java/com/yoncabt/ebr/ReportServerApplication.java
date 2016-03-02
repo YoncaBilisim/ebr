@@ -16,6 +16,7 @@ import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @SpringBootApplication
 public class ReportServerApplication {
@@ -47,6 +48,14 @@ public class ReportServerApplication {
         ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
         pool.setCorePoolSize(25);
         pool.setMaxPoolSize(100);
+        pool.setWaitForTasksToCompleteOnShutdown(true);
+        return pool;
+    }
+
+    @Bean
+    public ThreadPoolTaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler pool = new ThreadPoolTaskScheduler();
+        pool.setPoolSize(100);
         pool.setWaitForTasksToCompleteOnShutdown(true);
         return pool;
     }

@@ -14,19 +14,22 @@ import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.executor.ReportList;
 import com.yoncabt.ebr.executor.ReportTask;
+import com.yoncabt.ebr.executor.Status;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Date;
 import java.util.List;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,7 +47,10 @@ public class ReportWS {
     private ApplicationContext context;
 
     @Autowired
-    private TaskExecutor executor;
+    private ThreadPoolTaskExecutor executor;
+
+    @Autowired
+    private ThreadPoolTaskScheduler scheduler;
 
     @Autowired
     private ReportList requestList;
@@ -182,7 +188,13 @@ public class ReportWS {
         }
         task.setRequest(req);
         requestList.add(task);
-        if (req.isAsync()) {
+        if (req.getScheduleTime() > 0) {
+            task.setStatus(Status.SCHEDULED);
+            scheduler.schedule(task, new Date(req.getScheduleTime()));
+            ReportResponse res = new ReportResponse();
+            res.setUuid(req.getUuid());
+            return ResponseEntity.status(HttpStatus.CREATED).body(res);
+        } else if (req.isAsync()) {
             executor.execute(task);
             ReportResponse res = new ReportResponse();
             res.setUuid(req.getUuid());

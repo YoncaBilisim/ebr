@@ -147,6 +147,10 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
         return status;
     }
 
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
     @Override
     public int compareTo(ReportTask o) {
         return Long.valueOf(this.getStarted()).compareTo(o.getStarted());
