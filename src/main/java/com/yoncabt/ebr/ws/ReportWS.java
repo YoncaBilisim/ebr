@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -176,7 +177,7 @@ public class ReportWS {
         if (StringUtils.isBlank(req.getUuid())) {
             req.setUuid(reportIDGenerator.generate());
         }
-        if (!req.getReport().endsWith(".jrxml")) {
+        if (FilenameUtils.getExtension(req.getReport()).isEmpty()) {
             req.setReport(req.getReport() + ".jrxml");
         }
         task.setRequest(req);
