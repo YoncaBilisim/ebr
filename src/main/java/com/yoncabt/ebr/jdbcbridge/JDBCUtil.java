@@ -14,6 +14,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import javax.inject.Singleton;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -48,11 +49,27 @@ public class JDBCUtil {
     }
 
     public YoncaConnection connect(String dataSource, ReportRequest req) throws SQLException {
-        return connect(EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".driver", ""),
-                EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".url", ""),
-                EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".user", ""),
-                EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".pass", ""),
-                req);
+        final String driver = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".driver", "");
+        if (StringUtils.isEmpty(driver)) {
+            throw new IllegalArgumentException("driver not found");
+        }
+
+        final String url = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".url", "");
+        if (StringUtils.isEmpty(url)) {
+            throw new IllegalArgumentException("url not found");
+        }
+
+        final String user = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".user", "");
+        if (StringUtils.isEmpty(user)) {
+            throw new IllegalArgumentException("user not found");
+        }
+
+        final String pass = EBRConf.INSTANCE.getValue("report.datasource." + dataSource + ".pass", "");
+        if (StringUtils.isEmpty(pass)) {
+            throw new IllegalArgumentException("pass not found");
+        }
+
+        return connect(driver, url, user, pass, req);
     }
 
     // bu metod biraz kötü
