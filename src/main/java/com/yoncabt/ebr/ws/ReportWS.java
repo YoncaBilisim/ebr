@@ -170,9 +170,6 @@ public class ReportWS {
             @RequestBody(required = true) ReportRequest req
     ) {
         ReportTask task = context.getBean(ReportTask.class);
-        if (StringUtils.isBlank(req.getDatasourceName())) {
-            req.setDatasourceName("default");
-        }
         if (StringUtils.isBlank(req.getLocale())) {
             req.setLocale(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_DEFAULT_LOCALE, "tr_TR"));
         }

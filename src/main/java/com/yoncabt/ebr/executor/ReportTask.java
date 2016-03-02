@@ -67,11 +67,16 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
         response = new ReportResponse();
         response.setUuid(request.getUuid());
         try {
-            connection = jdbcutil.connect(request);
             //FIXME support for sql
             JasperReport jr = new JasperReport(JasperReport.getReportFile(request.getReport()));
             ReportDefinition definition = jr.loadDefinition();
-            definition.setDataSource(request.getDatasourceName());
+            if (StringUtils.isNotEmpty(request.getDatasourceName())) {
+                definition.setDataSource(request.getDatasourceName());
+            }
+            if (StringUtils.isEmpty(definition.getDataSource())) {
+                definition.setDataSource("default");
+            }
+            connection = jdbcutil.connect(request);
             jasperReports.exportTo(request, ReportOutputFormat.valueOf(request.getExtension()), connection, definition);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             if (!StringUtils.isBlank(request.getEmail())) {
