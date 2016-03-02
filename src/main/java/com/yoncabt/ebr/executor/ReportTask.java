@@ -70,11 +70,11 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
             //FIXME support for sql
             JasperReport jr = new JasperReport(JasperReport.getReportFile(request.getReport()));
             ReportDefinition definition = jr.loadDefinition();
-            if (StringUtils.isNotEmpty(request.getDatasourceName())) {
-                definition.setDataSource(request.getDatasourceName());
+            if (StringUtils.isEmpty(request.getDatasourceName())) {
+                request.setDatasourceName(definition.getDataSource());
             }
-            if (StringUtils.isEmpty(definition.getDataSource())) {
-                definition.setDataSource("default");
+            if (StringUtils.isEmpty(request.getDatasourceName())) {
+                request.setDatasourceName("default");
             }
             connection = jdbcutil.connect(request);
             jasperReports.exportTo(request, ReportOutputFormat.valueOf(request.getExtension()), connection, definition);
