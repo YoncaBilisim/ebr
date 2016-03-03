@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -34,7 +35,7 @@ public class YoncaMailSender {
         for (Map.Entry<String, byte[]> entrySet : attachments.entrySet()) {
             String key = entrySet.getKey();
             byte[] value = entrySet.getValue();
-            InputStreamResource isr = new InputStreamResource(new ByteArrayInputStream(value));
+            ByteArrayResource isr = new ByteArrayResource(value);
             mmh.addAttachment(key, isr);
 
         }
