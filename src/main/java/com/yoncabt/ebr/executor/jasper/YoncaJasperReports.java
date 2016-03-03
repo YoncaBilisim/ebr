@@ -203,7 +203,7 @@ public class YoncaJasperReports {
             case txt:
                 exporter = new JRTextExporter();
                 output = new SimpleWriterExporterOutput(exportReportFile);
-                putTextParams((JRTextExporter) exporter, params, "SUITABLE");
+                putTextParams((JRTextExporter) exporter, params, reportDefinition.getTextTemplate());
                 break;
             default:
                 throw new AssertionError(outputFormat.toString() + " not supported");
