@@ -14,6 +14,7 @@ import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.executor.jasper.YoncaJasperReports;
 import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
+import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import org.apache.commons.lang.StringUtils;
@@ -39,6 +40,9 @@ public class ReportTask implements Runnable {
 
     @Autowired
     private JDBCUtil jdbcutil;
+    
+    @Autowired
+    private ReportLogger reportLogger;
 
     private static FLogManager logManager = FLogManager.getLogger(ReportTask.class);
 
@@ -73,8 +77,10 @@ public class ReportTask implements Runnable {
             ReportDefinition definition = jr.loadDefinition();
             definition.setDataSource(request.getDatasourceName());
             jasperReports.exportTo(request.getReportParams(), ReportOutputFormat.valueOf(request.getExtension()), connection, request.getLocale(), request.getUuid(), definition);
+            byte[] bytes = reportLogger.getReportData(request.getUuid());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            if (!StringUtils.isBlank(request.getEmail())) {
+            baos.write(bytes, 0, bytes.length);
+            if (!StringUtils.isBlank(request.getEmail()) && baos.size() != 0) {
                 mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
             }
             logManager.info(request.getUuid() + " bitti");
