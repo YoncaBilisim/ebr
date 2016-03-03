@@ -7,6 +7,7 @@ package com.yoncabt.ebr.executor.jasper;
 
 import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
+import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
@@ -16,6 +17,7 @@ import com.yoncabt.ebr.util.ASCIIFier;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -64,6 +66,8 @@ public class YoncaJasperReports {
 
     @Autowired
     private ReportLogger reportLogger;
+    
+    private static FLogManager logManager = FLogManager.getLogger(YoncaJasperReports.class);
 
     public void exportTo(
             ReportRequest request,
@@ -90,30 +94,34 @@ public class YoncaJasperReports {
         });
         params.put("__extension", outputFormat.name());
         params.put("__start_time", System.currentTimeMillis());
+        params.put(JRParameter.REPORT_LOCALE, LocaleUtils.toLocale(locale));
 
         File jrxmlFile = reportDefinition.getFile();
         //alttaki satır tehlikeli olabilir mi ?
-        File resourceFile = new File(jrxmlFile.getParentFile(), "messages_" + locale + ".properties");
-        Properties properties = new Properties();
-        try (FileInputStream fis = new FileInputStream(resourceFile)) {
-            properties.load(fis);
+        String resourceFileName = "messages_" + locale + ".properties";
+        try {
+            File resourceFile = new File(jrxmlFile.getParentFile(), resourceFileName);
+            Properties properties = new Properties();
+            try (FileInputStream fis = new FileInputStream(resourceFile)) {
+                properties.load(fis);
+            }
+            ResourceBundle rb = new ResourceBundle() {
+
+                @Override
+                protected Object handleGetObject(String key) {
+                    return properties.get(key);
+                }
+ 
+                @Override
+                public Enumeration<String> getKeys() {
+                    return (Enumeration<String>) ((Enumeration<?>) properties.keys());
+                }
+            };
+            // FIXME yerelleştime dosyaları buradan okunacak
+            params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
+        } catch (FileNotFoundException e) {
+            logManager.info(resourceFileName + " file does not found!");
         }
-        ResourceBundle rb = new ResourceBundle() {
-
-            @Override
-            protected Object handleGetObject(String key) {
-                return properties.get(key);
-            }
-
-            @Override
-            public Enumeration<String> getKeys() {
-                return (Enumeration<String>) ((Enumeration<?>) properties.keys());
-            }
-        };
-
-        // FIXME yerelleştime dosyaları buradan okunacak
-        params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
-        params.put(JRParameter.REPORT_LOCALE, LocaleUtils.toLocale(locale));
 
         String virtDir = EBRConf.INSTANCE.getValue(EBRParams.REPORTS_VIRTUALIZER_DIRECTORY, "/tmp/ebr/virtualizer");
         int maxSize = EBRConf.INSTANCE.getValue(EBRParams.REPORTS_VIRTUALIZER_MAXSIZE, Integer.MAX_VALUE);
