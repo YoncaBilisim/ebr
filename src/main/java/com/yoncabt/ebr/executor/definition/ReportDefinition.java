@@ -20,6 +20,7 @@ public class ReportDefinition {
     private ReportType reportType;
     private String dataSource;
     private String textEncoding;
+    private String textTemplate;
     private File file;
 
     public ReportDefinition(File file) {
@@ -99,5 +100,19 @@ public class ReportDefinition {
      */
     public void setFile(File file) {
         this.file = file;
+    }
+
+    /**
+     * @return the textTemplate
+     */
+    public String getTextTemplate() {
+        return textTemplate;
+    }
+
+    /**
+     * @param textTemplate the textTemplate to set
+     */
+    public void setTextTemplate(String textTemplate) {
+        this.textTemplate = textTemplate;
     }
 }
