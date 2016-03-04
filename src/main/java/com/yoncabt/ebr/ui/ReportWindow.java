@@ -28,6 +28,7 @@ import com.vaadin.ui.Window;
 import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
+import com.yoncabt.ebr.executor.BaseReport;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
 import com.yoncabt.ebr.executor.jasper.JasperReport;
@@ -48,6 +49,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import net.sf.jasperreports.engine.JRException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
@@ -68,7 +70,7 @@ public class ReportWindow extends UI {
     private FormLayout formLayout = new FormLayout();
     private Grid grid;
     private String sql;
-    private SQLReport sqlreport;
+    private BaseReport sqlreport;
     private HorizontalLayout gridLayout;
     private Button btnExport;
 
@@ -126,14 +128,22 @@ public class ReportWindow extends UI {
             File reportDir = new File(reportPath);
             File reportFile = new File(reportDir, frag);
             if (reportFile.exists()) {
-                sql = FileUtils.readFileToString(reportFile, "utf-8").trim();
-                sqlreport = new SQLReport(JasperReport.getReportFile(frag));
-                reportDefinition = sqlreport.loadDefinition();
+                if(FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("sql")) {
+                    sql = FileUtils.readFileToString(reportFile, "utf-8").trim();
+                    sqlreport = new SQLReport(JasperReport.getReportFile(frag));
+                    reportDefinition = ((SQLReport)sqlreport).loadDefinition();
+                } else if(FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("jrxml")) {
+                    sql = "";
+                    sqlreport = new JasperReport(JasperReport.getReportFile(frag));
+                    reportDefinition = ((JasperReport)sqlreport).loadDefinition();
+                } else {
+                    Notification.show(frag + " bilinmeyen rapor türü", Notification.Type.ERROR_MESSAGE);
+                }
                 showFields(reportDefinition, window, formLayout);
             } else {
                 Notification.show(frag + " raporu sisteminizde yok", Notification.Type.ERROR_MESSAGE);
             }
-        } catch (IOException ex) {
+        } catch (IOException | JRException ex) {
             Notification.show("Hata", Notification.Type.ERROR_MESSAGE);
             Logger.getLogger(ReportWindow.class.getName()).log(Level.SEVERE, null, ex);
         }

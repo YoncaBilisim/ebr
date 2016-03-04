@@ -58,7 +58,7 @@ public class JasperReport extends BaseReport {
 
         net.sf.jasperreports.engine.JasperReport jasperReport = (net.sf.jasperreports.engine.JasperReport) JRLoader.loadObject(compileIfRequired(file));
         for (JRParameter param : jasperReport.getParameters()) {
-            if (!param.isForPrompting()) {
+            if (!param.isForPrompting() || param.isSystemDefined()) {
                 continue;
             }
             ReportParam rp = new ReportParam(param.getValueClass());
