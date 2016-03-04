@@ -81,6 +81,7 @@ public class BaseDBReportLogger implements ReportLogger {
             ps.setBinaryStream(1, reportData);
             ps.setString(2, request.getUuid());
             if (ps.executeUpdate() == 1) {// daha önce loglanmış bir rapor ise sadece güncelle
+                connection.commit();
                 return;
             }
             connection.commit();
