@@ -85,6 +85,17 @@ public abstract class BaseReport {
                             ret.getReportParams().add(rp);
                             break;
                         }
+                    case "double":
+                        {
+                            ReportParam<Double> rp = new ReportParam<>(Double.class);
+                            readCommon(rp, field);
+                            double min = field.has("min") ? field.getLong("min") : Double.MIN_VALUE;
+                            double max = field.has("max") ? field.getLong("max") : Double.MAX_VALUE;
+                            rp.setMax(max);
+                            rp.setMin(min);
+                            ret.getReportParams().add(rp);
+                            break;
+                        }
                     default:
                         {
                             throw new AssertionError(type);

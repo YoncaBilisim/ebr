@@ -25,6 +25,7 @@ public class JDBCNamedParameters {
     private String sql;
     private Map<String, Integer> intParams = new HashMap<>();
     private Map<String, Long> longParams = new HashMap<>();
+    private Map<String, Double> doubleParams = new HashMap<>();
     private Map<String, String> stringParams = new HashMap<>();
     private Map<String, Date> dateParams = new HashMap<>();
 
@@ -38,6 +39,10 @@ public class JDBCNamedParameters {
 
     public void set(String param, Long value) {
         longParams.put(param, value);
+    }
+
+    public void set(String param, Double value) {
+        doubleParams.put(param, value);
     }
 
     public void set(String param, String value) {
@@ -67,6 +72,8 @@ public class JDBCNamedParameters {
                 ps.setInt(i + 1, intParams.get(paramName));
             } else if (longParams.containsKey(paramName)) {
                 ps.setLong(i + 1, longParams.get(paramName));
+            } else if (doubleParams.containsKey(paramName)) {
+                ps.setDouble(i + 1, doubleParams.get(paramName));
             } else if (stringParams.containsKey(paramName)) {
                 ps.setString(i + 1, stringParams.get(paramName));
             } else if (dateParams.containsKey(paramName)) {

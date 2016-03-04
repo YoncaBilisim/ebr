@@ -5,6 +5,7 @@
  */
 package com.yoncabt.ebr.ui;
 
+import com.vaadin.data.validator.DoubleRangeValidator;
 import com.vaadin.data.validator.IntegerRangeValidator;
 import com.vaadin.data.validator.LongRangeValidator;
 import com.vaadin.server.FontAwesome;
@@ -160,6 +161,10 @@ public class ReportWindow extends UI {
                 TextField f = new TextField(param.getLabel());
                 f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long) param.getMin(), (Long) param.getMax()));
                 comp = f;
+            } else if (type == Double.class) {
+                TextField f = new TextField(param.getLabel());
+                f.addValidator(new DoubleRangeValidator("Sayı kontrolü", (Double) param.getMin(), (Double) param.getMax()));
+                comp = f;
             } else {
                 throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getType());
             }
@@ -210,9 +215,9 @@ public class ReportWindow extends UI {
                     p.set(reportParam.getName(), Long.parseLong(value));
                 }
             }
-            else if (type == Long.class) {
+            else if (type == Double.class) {
                 String value = (String) findFormField(reportParam.getName()).getValue();
-                p.set(reportParam.getName(), Long.parseLong(value));
+                p.set(reportParam.getName(), Double.parseDouble(value));
             }
             else if (type == Date.class) {
                 Date value = (Date) findFormField(reportParam.getName()).getValue();
