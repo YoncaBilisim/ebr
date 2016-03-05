@@ -36,6 +36,7 @@ import net.sf.jasperreports.engine.util.JRElementsVisitor;
 import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.engine.util.JRSaver;
 import net.sf.jasperreports.engine.xml.JRXmlLoader;
+import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -63,6 +64,10 @@ public class JasperReport extends BaseReport {
             }
             ReportParam rp = new ReportParam(param.getValueClass());
             rp.setName(param.getName());
+            if (param.getDefaultValueExpression() != null && StringUtils.isNotBlank(param.getDefaultValueExpression().getText())) {
+                // FIXME alttaki değer script olabilir çalıştırılması gerekebilir
+                rp.setDefaultValue(Convert.to(StringUtils.strip(param.getDefaultValueExpression().getText(), "\""), param.getValueClass()));
+            }
             rp.setLabel(param.getName());
             ret.getReportParams().add(rp);
         }

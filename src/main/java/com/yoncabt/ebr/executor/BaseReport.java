@@ -53,6 +53,8 @@ public abstract class BaseReport {
                         {
                             ReportParam<Date> rp = new ReportParam<>(Date.class);
                             readCommon(rp, field);
+                            if(field.has("default-value"))
+                                rp.setDefaultValue(new Date(field.getLong("default-value")));
                             ret.getReportParams().add(rp);
                             break;
                         }
@@ -60,6 +62,8 @@ public abstract class BaseReport {
                         {
                             ReportParam<String> rp = new ReportParam<>(String.class);
                             readCommon(rp, field);
+                            if(field.has("default-value"))
+                                rp.setDefaultValue(field.getString("default-value"));
                             ret.getReportParams().add(rp);
                             break;
                         }
@@ -71,6 +75,8 @@ public abstract class BaseReport {
                             int max = field.has("max") ? field.getInt("max") : Integer.MAX_VALUE;
                             rp.setMax(max);
                             rp.setMin(min);
+                            if(field.has("default-value"))
+                                rp.setDefaultValue(field.getInt("default-value"));
                             ret.getReportParams().add(rp);
                             break;
                         }
@@ -82,6 +88,8 @@ public abstract class BaseReport {
                             long max = field.has("max") ? field.getLong("max") : Long.MAX_VALUE;
                             rp.setMax(max);
                             rp.setMin(min);
+                            if(field.has("default-value"))
+                                rp.setDefaultValue(field.getLong("default-value"));
                             ret.getReportParams().add(rp);
                             break;
                         }
@@ -93,6 +101,8 @@ public abstract class BaseReport {
                             double max = field.has("max") ? field.getLong("max") : Double.MAX_VALUE;
                             rp.setMax(max);
                             rp.setMin(min);
+                            if(field.has("default-value"))
+                                rp.setDefaultValue(field.getDouble("default-value"));
                             ret.getReportParams().add(rp);
                             break;
                         }

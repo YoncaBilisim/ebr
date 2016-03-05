@@ -178,7 +178,7 @@ public class ReportWindow extends UI {
             } else {
                 throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getType());
             }
-
+            comp.setValue(param.getDefaultValue());
             comp.setImmediate(true);
             comp.setValidationVisible(false);
             comp.setId(param.getName());
