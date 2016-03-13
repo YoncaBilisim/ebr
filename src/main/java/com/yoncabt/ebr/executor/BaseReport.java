@@ -5,6 +5,7 @@
  */
 package com.yoncabt.ebr.executor;
 
+import com.yoncabt.ebr.FieldType;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
 import java.io.File;
@@ -47,9 +48,9 @@ public abstract class BaseReport {
             JSONArray fieldsArray = jsonObject.getJSONArray("fields");
             for (int i = 0; i < fieldsArray.length(); i++) {
                 JSONObject field = fieldsArray.getJSONObject(i);
-                String type = field.getString("type");
+                FieldType type = FieldType.valueOfJSONName(field.getString("type"));
                 switch (type) {
-                    case "date":
+                    case DATE:
                         {
                             ReportParam<Date> rp = new ReportParam<>(Date.class);
                             readCommon(rp, field);
@@ -58,7 +59,7 @@ public abstract class BaseReport {
                             ret.getReportParams().add(rp);
                             break;
                         }
-                    case "string":
+                    case STRING:
                         {
                             ReportParam<String> rp = new ReportParam<>(String.class);
                             readCommon(rp, field);
@@ -67,7 +68,7 @@ public abstract class BaseReport {
                             ret.getReportParams().add(rp);
                             break;
                         }
-                    case "int":
+                    case INTEGER:
                         {
                             ReportParam<Integer> rp = new ReportParam<>(Integer.class);
                             readCommon(rp, field);
@@ -80,7 +81,7 @@ public abstract class BaseReport {
                             ret.getReportParams().add(rp);
                             break;
                         }
-                    case "long":
+                    case LONG:
                         {
                             ReportParam<Long> rp = new ReportParam<>(Long.class);
                             readCommon(rp, field);
@@ -93,7 +94,7 @@ public abstract class BaseReport {
                             ret.getReportParams().add(rp);
                             break;
                         }
-                    case "double":
+                    case DOUBLE:
                         {
                             ReportParam<Double> rp = new ReportParam<>(Double.class);
                             readCommon(rp, field);

@@ -11,7 +11,6 @@ import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.jasper.JasperReport;
-import com.yoncabt.ebr.executor.jasper.YoncaJasperReports;
 import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
@@ -33,7 +32,7 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
     private volatile Status status = Status.WAIT;
 
     @Autowired
-    private YoncaJasperReports jasperReports;
+    private JasperReport jasperReports;
 
     @Autowired
     private YoncaMailSender mailSender;
@@ -72,8 +71,8 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
         response.setUuid(request.getUuid());
         try {
             //FIXME support for sql
-            JasperReport jr = new JasperReport(JasperReport.getReportFile(request.getReport()));
-            ReportDefinition definition = jr.loadDefinition();
+            JasperReport jr = new JasperReport();
+            ReportDefinition definition = jr.loadDefinition(JasperReport.getReportFile(request.getReport()));
             if (StringUtils.isEmpty(request.getDatasourceName())) {
                 request.setDatasourceName(definition.getDataSource());
             }

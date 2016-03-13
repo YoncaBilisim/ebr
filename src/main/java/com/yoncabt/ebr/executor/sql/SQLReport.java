@@ -10,23 +10,22 @@ import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.stereotype.Component;
 
 /**
  *
  * @author myururdurmaz
  */
+@Component
 public class SQLReport extends BaseReport {
 
     private File file;
 
-    public SQLReport(File file) {
+    public ReportDefinition loadDefinition(File file) throws IOException {
         this.file = file;
-    }
-
-    public ReportDefinition loadDefinition() throws IOException {
         String jsonFilePath = StringUtils.removeEnd(file.getAbsolutePath(), ".sql") + ".ebr.json";
         File jsonFile = new File(jsonFilePath);
-        return loadDefinition(file, jsonFile);
+        return super.loadDefinition(file, jsonFile);
     }
 
     /**

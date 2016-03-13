@@ -5,6 +5,8 @@
  */
 package com.yoncabt.ebr.executor.definition;
 
+import com.yoncabt.ebr.FieldType;
+
 /**
  *
  * @author myururdurmaz
@@ -12,7 +14,8 @@ package com.yoncabt.ebr.executor.definition;
  */
 public class ReportParam<T> {
 
-    private Class<T> type;
+    private Class<T> javaType;
+    private FieldType fieldType;
     private String name;
     private String label;
     private String format;
@@ -22,23 +25,22 @@ public class ReportParam<T> {
     private boolean raw;
 
     public ReportParam(Class<T> type) {
-        this.type = type;
-    }
-
-
-
-    /**
-     * @return the type
-     */
-    public Class<T> getType() {
-        return type;
+        this.javaType = type;
+        this.fieldType = FieldType.valueOfJavaType(type);
     }
 
     /**
-     * @param type the type to set
+     * @return the javaType
      */
-    public void setType(Class<T> type) {
-        this.type = type;
+    public Class<T> getJavaType() {
+        return javaType;
+    }
+
+    /**
+     * @param javaType the javaType to set
+     */
+    public void setJavaType(Class<T> javaType) {
+        this.javaType = javaType;
     }
 
     /**
@@ -137,5 +139,19 @@ public class ReportParam<T> {
      */
     public void setRaw(boolean raw) {
         this.raw = raw;
+    }
+
+    /**
+     * @return the fieldType
+     */
+    public FieldType getFieldType() {
+        return fieldType;
+    }
+
+    /**
+     * @param fieldType the fieldType to set
+     */
+    public void setFieldType(FieldType fieldType) {
+        this.fieldType = fieldType;
     }
 }

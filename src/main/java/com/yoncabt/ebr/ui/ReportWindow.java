@@ -28,6 +28,7 @@ import com.vaadin.ui.Window;
 import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
+import com.yoncabt.ebr.FieldType;
 import com.yoncabt.ebr.executor.BaseReport;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
@@ -36,14 +37,16 @@ import com.yoncabt.ebr.executor.sql.SQLReport;
 import com.yoncabt.ebr.jdbcbridge.JDBCNamedParameters;
 import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
 import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
+import com.yoncabt.ebr.util.ResultSetDeserializer;
+import com.yoncabt.ebr.util.ResultSetSerializer;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -128,14 +131,14 @@ public class ReportWindow extends UI {
             File reportDir = new File(reportPath);
             File reportFile = new File(reportDir, frag);
             if (reportFile.exists()) {
-                if(FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("sql")) {
+                if (FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("sql")) {
                     sql = FileUtils.readFileToString(reportFile, "utf-8").trim();
-                    sqlreport = new SQLReport(JasperReport.getReportFile(frag));
-                    reportDefinition = ((SQLReport)sqlreport).loadDefinition();
-                } else if(FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("jrxml")) {
+                    sqlreport = new SQLReport();
+                    reportDefinition = ((SQLReport) sqlreport).loadDefinition(JasperReport.getReportFile(frag));
+                } else if (FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("jrxml")) {
                     sql = "";
-                    sqlreport = new JasperReport(JasperReport.getReportFile(frag));
-                    reportDefinition = ((JasperReport)sqlreport).loadDefinition();
+                    sqlreport = new JasperReport();
+                    reportDefinition = ((JasperReport) sqlreport).loadDefinition(JasperReport.getReportFile(frag));
                 } else {
                     Notification.show(frag + " bilinmeyen rapor türü", Notification.Type.ERROR_MESSAGE);
                 }
@@ -154,31 +157,44 @@ public class ReportWindow extends UI {
         fl.removeAllComponents();
         w.setCaption(definition.getCaption());
         for (ReportParam param : definition.getReportParams()) {
-            Class type = param.getType();
             AbstractField comp = null;
-            if (type == Date.class) {
-                DateField f = new DateField(param.getLabel());
-                f.setDateFormat(param.getFormat());
-                comp = f;
-            } else if (type == String.class) {
-                TextField f = new TextField(param.getLabel());
-                comp = f;
-            } else if (type == Integer.class) {
-                TextField f = new TextField(param.getLabel());
-                f.addValidator(new IntegerRangeValidator("Sayı kontrolü", (Integer) param.getMin(), (Integer) param.getMax()));
-                comp = f;
-            } else if (type == Long.class) {
-                TextField f = new TextField(param.getLabel());
-                f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long) param.getMin(), (Long) param.getMax()));
-                comp = f;
-            } else if (type == Double.class) {
-                TextField f = new TextField(param.getLabel());
-                f.addValidator(new DoubleRangeValidator("Sayı kontrolü", (Double) param.getMin(), (Double) param.getMax()));
-                comp = f;
-            } else {
-                throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getType());
+            switch (param.getFieldType()) {
+                case STRING: {
+                    TextField f = new TextField(param.getLabel());
+                    comp = f;
+                    break;
+                }
+                case INTEGER: {
+                    TextField f = new TextField(param.getLabel());
+                    f.addValidator(new IntegerRangeValidator("Sayı kontrolü", (Integer) param.getMin(), (Integer) param.getMax()));
+                    comp = f;
+                    break;
+                }
+                case LONG: {
+                    TextField f = new TextField(param.getLabel());
+                    f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long) param.getMin(), (Long) param.getMax()));
+                    comp = f;
+                    break;
+                }
+                case DOUBLE: {
+                    TextField f = new TextField(param.getLabel());
+                    f.addValidator(new DoubleRangeValidator("Sayı kontrolü", (Double) param.getMin(), (Double) param.getMax()));
+                    comp = f;
+                    break;
+                }
+                case DATE: {
+                    DateField f = new DateField(param.getLabel());
+                    f.setDateFormat(param.getFormat());
+                    comp = f;
+                    break;
+                }
+                default: {
+                    throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getJavaType());
+                }
             }
-            comp.setValue(param.getDefaultValue());
+            if (param.getDefaultValue() != null) {
+                comp.setValue(param.getDefaultValue());
+            }
             comp.setImmediate(true);
             comp.setValidationVisible(false);
             comp.setId(param.getName());
@@ -196,11 +212,11 @@ public class ReportWindow extends UI {
         return null;
     }
 
-    private void fillTheGrid() throws SQLException {
+    private void fillTheGrid() throws SQLException, IOException {
         gridLayout.removeComponent(grid);
         createGrid();
         for (ReportParam reportParam : reportDefinition.getReportParams()) {
-            if(reportParam.isRaw()) {
+            if (reportParam.isRaw()) {
                 String value = (String) findFormField(reportParam.getName()).getValue();
                 value = StringEscapeUtils.escapeSql(value);
                 Pattern pattern = Pattern.compile(":\\b" + reportParam.getName() + "\\b");
@@ -209,79 +225,67 @@ public class ReportWindow extends UI {
         }
         JDBCNamedParameters p = new JDBCNamedParameters(sql);
         for (ReportParam reportParam : reportDefinition.getReportParams()) {
-            Class type = reportParam.getType();
-            if(reportParam.isRaw()) {
+            if (reportParam.isRaw()) {
                 //
-            }
-            else if (type == Integer.class) {
-                String value = (String) findFormField(reportParam.getName()).getValue();
-                if (!StringUtils.isEmpty(value)) {
-                    p.set(reportParam.getName(), Integer.parseInt(value));
+            } else {
+                FieldType type = reportParam.getFieldType();
+                switch (type) {
+                    case STRING: {
+                        String value = (String) findFormField(reportParam.getName()).getValue();
+                        if (!StringUtils.isEmpty(value)) {
+                            p.set(reportParam.getName(), value);
+                        }
+                        break;
+                    }
+                    case INTEGER: {
+                        String value = (String) findFormField(reportParam.getName()).getValue();
+                        if (!StringUtils.isEmpty(value)) {
+                            p.set(reportParam.getName(), Integer.parseInt(value));
+                        }
+                        break;
+                    }
+                    case LONG: {
+                        String value = (String) findFormField(reportParam.getName()).getValue();
+                        if (!StringUtils.isEmpty(value)) {
+                            p.set(reportParam.getName(), Long.parseLong(value));
+                        }
+                        break;
+                    }
+                    case DOUBLE: {
+                        String value = (String) findFormField(reportParam.getName()).getValue();
+                        p.set(reportParam.getName(), Double.parseDouble(value));
+                        break;
+                    }
+                    case DATE: {
+                        Date value = (Date) findFormField(reportParam.getName()).getValue();
+                        p.set(reportParam.getName(), value);
+                        break;
+                    }
+                    default:
+                        throw new AssertionError(reportParam.getName() + " in tipi tanınmıyor :" + reportParam.getFieldType());
                 }
-            }
-            else if (type == Long.class) {
-                String value = (String) findFormField(reportParam.getName()).getValue();
-                if (!StringUtils.isEmpty(value)) {
-                    p.set(reportParam.getName(), Long.parseLong(value));
-                }
-            }
-            else if (type == Double.class) {
-                String value = (String) findFormField(reportParam.getName()).getValue();
-                p.set(reportParam.getName(), Double.parseDouble(value));
-            }
-            else if (type == Date.class) {
-                Date value = (Date) findFormField(reportParam.getName()).getValue();
-                p.set(reportParam.getName(), value);
-            }
-            else {
-                throw new AssertionError(reportParam.getName() + " in tipi tanınmıyor :" + reportParam.getType());
             }
         }
 
         try (YoncaConnection con = jdbcutil.connect(StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default"));
                 PreparedStatement st = p.prepare(con);
                 ResultSet res = st.executeQuery()) {
-            ResultSetMetaData md = res.getMetaData();
-            for (int i = 0; i < md.getColumnCount(); i++) {
-                Class type;
-                if (md.getColumnType(i + 1) == Types.VARCHAR || md.getColumnType(i + 1) == Types.CHAR) {
-                    type = String.class;
-                } else if (md.getColumnType(i + 1) == Types.DATE) {
-                    type = Date.class;
-                } else if (md.getColumnType(i + 1) == Types.NUMERIC) {
-                    if (md.getScale(i + 1) > 0) {
-                        type = Double.class;
-                    } else if (md.getPrecision(i + 1) > 9) {
-                        type = Long.class;
-                    } else {
-                        type = Integer.class;
-                    }
-                } else {
-                    throw new AssertionError(md.getColumnTypeName(i + 1));
-                }
-                grid.addColumn(md.getColumnName(i + 1), type);
+            File file = File.createTempFile("ebr_ser_", ".json");
+            ResultSetSerializer ser = new ResultSetSerializer(res, file);
+            ser.serialize();
+            FileInputStream fis = new FileInputStream(file);
+            ResultSetDeserializer des = new ResultSetDeserializer(fis);
+            List<String> names = des.getNames();
+            List<FieldType> types = des.getTypes();
+            for (int i = 0; i < types.size(); i++) {
+                Class type = types.get(i).getJavaType();
+                String name = names.get(i);
+                grid.addColumn(name, type);
             }
-            while (res.next()) {
-                Object values[] = new Object[md.getColumnCount()];
-                for (int i = 0; i < md.getColumnCount(); i++) {
-                    if (md.getColumnType(i + 1) == Types.VARCHAR || md.getColumnType(i + 1) == Types.CHAR) {
-                        values[i] = res.getString(i + 1);
-                    } else if (md.getColumnType(i + 1) == Types.DATE) {
-                        values[i] = res.getDate(i + 1);
-                    } else if (md.getColumnType(i + 1) == Types.NUMERIC) {
-                        if (md.getScale(i + 1) > 0) {
-                            values[i] = res.getDouble(i + 1);
-                        } else if (md.getPrecision(i + 1) > 9) {
-                            values[i] = res.getLong(i + 1);
-                        } else {
-                            values[i] = res.getInt(i + 1);
-                        }
-                    } else {
-                        throw new AssertionError(md.getColumnTypeName(i + 1));
-                    }
-                }
-                grid.addRow(values);
-            }
+            List<Object[]> data = des.getData();
+            data.stream().forEach((d) -> {
+                grid.addRow(d);
+            });
         }
         grid.recalculateColumnWidths();
     }
@@ -292,8 +296,9 @@ public class ReportWindow extends UI {
         grid.setHeight("600px");
         grid.setHeightMode(HeightMode.CSS);
         gridLayout.addComponent(grid);
-        if(btnExport != null)
+        if (btnExport != null) {
             btnExport.setData(grid);
+        }
     }
 
     private MenuBar createMenuBar() throws IOException, JRException {
@@ -307,8 +312,14 @@ public class ReportWindow extends UI {
         String menuText = dir.getName();
         File folderConfig = new File(dir, EBRParams.FOLDER_EBR_JSON);
         if (folderConfig.exists()) {
-            JSONObject jo = new JSONObject(FileUtils.readFileToString(folderConfig, "utf-8"));
-            menuText = jo.optString("label", menuText);
+            try {
+                JSONObject jo = new JSONObject(FileUtils.readFileToString(folderConfig, "utf-8"));
+                menuText = jo.optString("label", menuText);
+            } catch (IOException ex) {
+                throw new IOException(folderConfig.getAbsolutePath(), ex);
+            } catch (JSONException ex) {
+                throw new JSONException(new RuntimeException(folderConfig.getAbsolutePath(), ex));
+            }
         }
         MenuBar.MenuItem menuItem = mainItem.addItem(menuText, null);
 
@@ -318,8 +329,8 @@ public class ReportWindow extends UI {
             } else if (file.isDirectory()) {
                 createMenuBar(menuItem, file);
             } else if (file.getName().endsWith(".sql")) {
-                final SQLReport r = new SQLReport(file);
-                String text = r.loadDefinition().getCaption();
+                final SQLReport r = new SQLReport();
+                String text = r.loadDefinition(file).getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");
                     String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), EBRConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, ""));
@@ -327,8 +338,8 @@ public class ReportWindow extends UI {
                     getPage().setUriFragment(frag);
                 });
             } else if (file.getName().endsWith(".jrxml")) {//FIXME support for compiled jasper files
-                final JasperReport r = new JasperReport(file);
-                String text = r.loadDefinition().getCaption();
+                final JasperReport r = new JasperReport();
+                String text = r.loadDefinition(file).getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");
                     String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), EBRConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, ""));
