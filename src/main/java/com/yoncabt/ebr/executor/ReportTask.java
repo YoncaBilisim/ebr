@@ -11,8 +11,8 @@ import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.jasper.JasperReport;
-import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
-import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
+import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
+import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.ByteArrayOutputStream;
 import java.util.Collections;
@@ -38,8 +38,8 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
     private YoncaMailSender mailSender;
 
     @Autowired
-    private JDBCUtil jdbcutil;
-    
+    private DataSourceManager dataSourceManager;
+
     @Autowired
     private ReportLogger reportLogger;
 
@@ -51,11 +51,13 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
 
     private Exception exception;
 
-    private YoncaConnection connection;
+    private EBRConnection connection;
 
     private long started;
 
     private long ended;
+
+    private boolean sentToClient;
 
     @Override
     public void run() {
@@ -79,7 +81,7 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
             if (StringUtils.isEmpty(request.getDatasourceName())) {
                 request.setDatasourceName("default");
             }
-            connection = jdbcutil.connect(request);
+            connection = dataSourceManager.get(request.getDatasourceName(), request.getUser(), "EBR", request.getReport());
             jasperReports.exportTo(request, ReportOutputFormat.valueOf(request.getExtension()), connection, definition);
             byte[] bytes = reportLogger.getReportData(request.getUuid());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -124,7 +126,7 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
         return response;
     }
 
-    public YoncaConnection getYoncaConnection() {
+    public EBRConnection getYoncaConnection() {
         return connection;
     }
 
@@ -159,5 +161,19 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
     @Override
     public int compareTo(ReportTask o) {
         return Long.valueOf(this.getStarted()).compareTo(o.getStarted());
+    }
+
+    /**
+     * @return the sentToClient
+     */
+    public boolean isSentToClient() {
+        return sentToClient;
+    }
+
+    /**
+     * @param sentToClient the sentToClient to set
+     */
+    public void setSentToClient(boolean sentToClient) {
+        this.sentToClient = sentToClient;
     }
 }

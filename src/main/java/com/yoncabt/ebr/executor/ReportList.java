@@ -21,12 +21,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class ReportList {
 
-    private List<ReportTask> requestList = Collections.synchronizedList(new ArrayList<>());
-    private Map<String, ReportTask> requestMap = Collections.synchronizedMap(new HashMap<>());
+    private final List<ReportTask> requestList = Collections.synchronizedList(new ArrayList<>());
+    private final Map<String, ReportTask> requestMap = Collections.synchronizedMap(new HashMap<>());
 
     public void add(ReportTask task) {
-        requestMap.put(task.getRequest().getUuid(), task);
-        requestList.add(task);
+        synchronized(requestList) {
+            clear();
+            requestMap.put(task.getRequest().getUuid(), task);
+            requestList.add(task);
+        }
     }
 
     public ReportTask get(String uuid) {
@@ -51,5 +54,18 @@ public class ReportList {
 
     public List<String> getAllIds() {
         return new ArrayList<>(requestMap.keySet());
+    }
+
+    public void clear() {
+        List<ReportTask> toBoRemove = new ArrayList<>();
+        for (ReportTask task : requestList) {
+            if(task.isSentToClient()) {
+                toBoRemove.add(task);
+            }
+        }
+        for (ReportTask task : toBoRemove) {
+            requestMap.remove(task.getRequest().getUuid());
+        }
+        requestList.removeAll(toBoRemove);
     }
 }

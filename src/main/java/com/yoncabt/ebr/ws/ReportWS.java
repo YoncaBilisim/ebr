@@ -130,6 +130,7 @@ public class ReportWS {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         task.cancel();
+        task.setSentToClient(true);
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
@@ -144,6 +145,7 @@ public class ReportWS {
             logManager.info("output :YOK !!! " + requestId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
+        task.setSentToClient(true);
         logManager.info("output :" + task.getRequest().getUuid());
         return ResponseEntity.status(HttpStatus.OK)
                 .contentType(ReportOutputFormat.valueOf(task.getRequest().getExtension()).getMediaType())
@@ -164,6 +166,7 @@ public class ReportWS {
         PrintWriter pw = new PrintWriter(sw);
         task.getException().printStackTrace(pw);
         pw.flush();
+        task.setSentToClient(true);
         return ResponseEntity.status(HttpStatus.OK).body(sw.getBuffer().toString());
     }
 
