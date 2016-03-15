@@ -1,4 +1,5 @@
 VU=src/main/java/com/yoncabt/ebr/util/VersionUtil.java
+TOMCAT=apache-tomcat-8.0.28
 
 war: versiyon
 	mvn clean install -DskipTests
@@ -20,4 +21,12 @@ versiyon:
 	sed -i "0,/RE/s/GIT_ID = [^;]*/GIT_ID = \"`git rev-parse HEAD`\"/" $(VU)
 	git commit $(VU) -m "versiyon dosyası değişikliği"
 
-
+release:
+	rm -rf ebr target ebr.tar.xz
+	mvn clean compile war:exploded
+	mkdir ebr
+	aria2c --continue -x5 -j5 -s5 --checksum=md5=4b7ba7a5af0a5c395c0740fc011b59d1 http://download.yoncabt.com.tr/d/$(TOMCAT).tar.gz
+	tar xf $(TOMCAT).tar.gz -C ebr
+	rm ebr/$(TOMCAT)/webapps/{docs,examples} -rf
+	cp -r target/ebr ebr/$(TOMCAT)/webapps
+	tar cJf ebr.tar.xz ebr
