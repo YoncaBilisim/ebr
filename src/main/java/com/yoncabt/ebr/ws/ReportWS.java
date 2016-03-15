@@ -15,10 +15,12 @@ import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.executor.ReportList;
 import com.yoncabt.ebr.executor.ReportTask;
 import com.yoncabt.ebr.executor.Status;
+import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.apache.commons.io.FilenameUtils;
@@ -61,7 +63,18 @@ public class ReportWS {
     @Autowired
     private ReportLogger reportLogger;
 
+    @Autowired
+    private DataSourceManager dataSourceManager;
+
     private static FLogManager logManager = FLogManager.getLogger(ReportTask.class);
+
+    @RequestMapping(
+            value = {"/ws/1.0/dataSourceNames"},
+            method = RequestMethod.GET,
+            produces = "application/json")
+    public ResponseEntity<List<String>> dataSourceNames() {
+        return ResponseEntity.ok(new ArrayList<String>(dataSourceManager.getDataSourceNames()));
+    }
 
     @RequestMapping(
             value = {"/ws/1.0/status/{requestId}"},

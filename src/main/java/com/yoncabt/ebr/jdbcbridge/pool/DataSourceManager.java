@@ -28,7 +28,7 @@ public class DataSourceManager {
         }
     }
 
-    private Set<String> getDataSourceNames() {
+    public Set<String> getDataSourceNames() {
         Set<String> ret = new HashSet<>();
         for (Map.Entry<String, String> entrySet : EBRConf.INSTANCE.getMap().entrySet()) {
             String key = entrySet.getKey();
