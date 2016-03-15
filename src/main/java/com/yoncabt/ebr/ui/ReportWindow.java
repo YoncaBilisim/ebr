@@ -35,8 +35,8 @@ import com.yoncabt.ebr.executor.definition.ReportParam;
 import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.executor.sql.SQLReport;
 import com.yoncabt.ebr.jdbcbridge.JDBCNamedParameters;
-import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
-import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
+import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
+import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
 import com.yoncabt.ebr.util.ResultSetDeserializer;
 import com.yoncabt.ebr.util.ResultSetSerializer;
 import java.io.File;
@@ -66,9 +66,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @SpringUI(path = "/report/ui")
 public class ReportWindow extends UI {
 
-    @Autowired
-    private JDBCUtil jdbcutil;
-
     private Window window = new Window("BAŞLIKSIZ");
     private FormLayout formLayout = new FormLayout();
     private Grid grid;
@@ -76,6 +73,8 @@ public class ReportWindow extends UI {
     private BaseReport sqlreport;
     private HorizontalLayout gridLayout;
     private Button btnExport;
+    @Autowired
+    private DataSourceManager dataSourceManager;
 
     @Override
     protected void init(VaadinRequest request) {
@@ -266,8 +265,9 @@ public class ReportWindow extends UI {
                 }
             }
         }
+        final String dataSourceName = StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default");
 
-        try (YoncaConnection con = jdbcutil.connect(StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default"));
+        try (EBRConnection con = dataSourceManager.get(dataSourceName, "---", "EBR", reportDefinition.getFile().getAbsolutePath());
                 PreparedStatement st = p.prepare(con);
                 ResultSet res = st.executeQuery()) {
             File file = File.createTempFile("ebr_ser_", ".json");

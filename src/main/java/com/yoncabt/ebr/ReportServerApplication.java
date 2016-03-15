@@ -30,7 +30,7 @@ public class ReportServerApplication {
     }
 
     @Bean
-    @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
+    @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS, scopeName = "prototype")
     public ReportLogger reportLogger() {
         String impl = EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_IMPL, FileSystemReportLogger.class.getName());
         ReportLogger ret;

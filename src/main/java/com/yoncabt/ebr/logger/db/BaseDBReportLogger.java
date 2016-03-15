@@ -9,8 +9,8 @@ import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
-import com.yoncabt.ebr.jdbcbridge.JDBCUtil;
-import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
+import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
+import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -52,24 +52,15 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class BaseDBReportLogger implements ReportLogger {
 
-    private YoncaConnection connection;
-
     @Autowired
-    private JDBCUtil jdbcutil;
+    private DataSourceManager dataSourceManager;
 
     @PostConstruct
     private void init() {
-        try {
-            connection = jdbcutil.connect("dblogger");
-            connection.setAutoCommit(false);
-        } catch (SQLException ex) {
-            throw new Error(ex);
-        }
     }
 
     @PreDestroy
     private void destroy() throws SQLException {
-        connection.close();
     }
 
     @Override
@@ -77,30 +68,29 @@ public class BaseDBReportLogger implements ReportLogger {
         String table = EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_DBLOGGER_TABLENAME, "log_reports");
         String sql = String.format("update %s set report_data = ? where id = ?", table);
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setBinaryStream(1, reportData);
-            ps.setString(2, request.getUuid());
-            if (ps.executeUpdate() == 1) {// daha önce loglanmış bir rapor ise sadece güncelle
-                connection.commit();
-                return;
+        try (EBRConnection con = dataSourceManager.get("dblogger", request.getUser(), "EBR", getClass().getSimpleName());){
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setBinaryStream(1, reportData);
+                ps.setString(2, request.getUuid());
+                if (ps.executeUpdate() == 1) {// daha önce loglanmış bir rapor ise sadece güncelle
+                    con.commit();
+                    return;
+                }
+                con.commit();
             }
-            connection.commit();
-        } catch (SQLException ex) {
-            Logger.getLogger(BaseDBReportLogger.class.getName()).log(Level.SEVERE, null, ex);
-        }
 
-        sql = String.format("insert into %s ("
-                + "id, report_name, time_stamp, "
-                + "request_params, report_data, file_extension,"
-                + "data_source_name, email, report_locale,"
-                + "report_user) "
-                + "values("
-                + "?, ?, ?,"
-                + "?, ?, ?,"
-                + "?, ?, ?,"
-                + "?)", table);
-        try {
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            sql = String.format("insert into %s ("
+                    + "id, report_name, time_stamp, "
+                    + "request_params, report_data, file_extension,"
+                    + "data_source_name, email, report_locale,"
+                    + "report_user) "
+                    + "values("
+                    + "?, ?, ?,"
+                    + "?, ?, ?,"
+                    + "?, ?, ?,"
+                    + "?)", table);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, request.getUuid());
                 ps.setString(2, request.getReport());
                 ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
@@ -117,7 +107,7 @@ public class BaseDBReportLogger implements ReportLogger {
                 ps.setString(10, request.getUser());
 
                 ps.executeUpdate();
-                connection.commit();
+                con.commit();
             }
         } catch (SQLException ex) {
             Logger.getLogger(BaseDBReportLogger.class.getName()).log(Level.SEVERE, null, ex);
@@ -128,7 +118,8 @@ public class BaseDBReportLogger implements ReportLogger {
     public byte[] getReportData(String uuid) throws IOException {
         String table = EBRConf.INSTANCE.getValue("report.dblogger.tableName", "log_reports");
         String sql = String.format("select report_data from %s where id = ?", table);
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        try (EBRConnection con = dataSourceManager.get("dblogger", "--", "EBR", getClass().getSimpleName());
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, uuid);
             try (ResultSet res = ps.executeQuery()) {
                 if (res.next()) {

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.yoncabt.ebr.jdbcbridge;
+package com.yoncabt.ebr.jdbcbridge.pool;
 
 import java.io.Closeable;
 import java.sql.Array;
@@ -26,20 +26,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * bunu çalışan raporu kapatabilmek için kullanacağım.
  * @author myururdurmaz
  */
-public class YoncaConnection implements Connection, Closeable {
+public class EBRConnection implements Connection, Closeable {
+    private static AtomicInteger counter = new AtomicInteger();
 
-    private Connection connection;
+    Connection connection;
     private List<Statement> statementList = new ArrayList<>();
+    private DataSource dataSource;
+    private int id;
 
-    public YoncaConnection(Connection connection) {
+    public EBRConnection(DataSource dataSource, Connection connection) {
+        this.dataSource = dataSource;
         this.connection = connection;
+        id = counter.incrementAndGet();
     }
 
     @Override
@@ -90,11 +94,7 @@ public class YoncaConnection implements Connection, Closeable {
 
     @Override
     public void close() {
-        try {
-            connection.close();
-        } catch (SQLException ex) {
-            Logger.getLogger(YoncaConnection.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        dataSource.putConnection(this);
     }
 
     @Override
@@ -348,6 +348,10 @@ public class YoncaConnection implements Connection, Closeable {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return connection.isWrapperFor(iface);
+    }
+
+    public int getId() {
+        return id;
     }
 
 }

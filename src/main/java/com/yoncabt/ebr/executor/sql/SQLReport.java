@@ -10,6 +10,7 @@ import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
  * @author myururdurmaz
  */
 @Component
+@Scope(value = "request")
 public class SQLReport extends BaseReport {
 
     private File file;

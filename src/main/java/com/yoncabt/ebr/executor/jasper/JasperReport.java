@@ -14,7 +14,7 @@ import com.yoncabt.ebr.executor.BaseReport;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
 import com.yoncabt.ebr.executor.definition.ReportType;
-import com.yoncabt.ebr.jdbcbridge.YoncaConnection;
+import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
 import com.yoncabt.ebr.util.ASCIIFier;
 import java.io.ByteArrayInputStream;
@@ -76,6 +76,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 /**
@@ -83,6 +84,7 @@ import org.springframework.stereotype.Component;
  * @author myururdurmaz
  */
 @Component
+@Scope(value = "request")
 public class JasperReport extends BaseReport {
 
     private static FLogManager logManager = FLogManager.getLogger(JasperReport.class);
@@ -233,7 +235,7 @@ public class JasperReport extends BaseReport {
     public void exportTo(
             ReportRequest request,
             ReportOutputFormat outputFormat,
-            YoncaConnection connection,
+            EBRConnection connection,
             ReportDefinition reportDefinition) throws JRException, IOException {
         Map<String, Object> params = request.getReportParams();
         String locale = request.getLocale();
