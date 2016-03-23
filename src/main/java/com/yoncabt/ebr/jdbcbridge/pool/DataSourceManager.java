@@ -51,6 +51,10 @@ public class DataSourceManager {
             ds = new DataSource(dataSourceName);
             connections.put(dataSourceName, ds);
         }
-        return ds.getConnection(client, module, action);
+        EBRConnection ret = ds.getConnection(client, module, action);
+        if(ret == null) {
+            throw new IllegalArgumentException("'" + dataSourceName + "' datasource not found");
+        }
+        return ret;
     }
 }
