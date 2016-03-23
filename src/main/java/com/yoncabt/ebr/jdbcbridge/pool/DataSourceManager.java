@@ -47,14 +47,14 @@ public class DataSourceManager {
 
     public EBRConnection get(String dataSourceName, String client, String module, String action) throws SQLException {
         DataSource ds = connections.get(dataSourceName);
+        if(ds == null) {
+            throw new IllegalArgumentException("'" + dataSourceName + "' datasource not found");
+        }
         if(!ds.isValid()) {
             ds = new DataSource(dataSourceName);
             connections.put(dataSourceName, ds);
         }
         EBRConnection ret = ds.getConnection(client, module, action);
-        if(ret == null) {
-            throw new IllegalArgumentException("'" + dataSourceName + "' datasource not found");
-        }
         return ret;
     }
 }
