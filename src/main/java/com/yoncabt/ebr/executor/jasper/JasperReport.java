@@ -334,7 +334,7 @@ public class JasperReport extends BaseReport {
                 break;
             case csv:
                 exporter = new JRCsvExporter();
-                output = new SimpleOutputStreamExporterOutput(exportReportFile);
+                output = new SimpleWriterExporterOutput(exportReportFile);
                 break;
             case xml:
                 exporter = new JRXmlExporter();
