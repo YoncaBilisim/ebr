@@ -7,10 +7,13 @@ import com.vaadin.server.FontAwesome;
 import com.vaadin.server.StreamResource;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Grid;
+import com.yoncabt.ebr.executor.jasper.Convert;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -33,7 +36,7 @@ public class YoncaGridXLSExporter {
         StreamResource myResource = new StreamResource(() -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try {
-                saveGridToFile((Grid)downloadButton.getData(), baos);
+                saveGridToFile((Grid) downloadButton.getData(), baos);
                 return new ByteArrayInputStream(baos.toByteArray());
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -45,6 +48,41 @@ public class YoncaGridXLSExporter {
     }
 
     public static void saveGridToFile(Grid grid, OutputStream out) throws IOException {
+        List<Object[]> headers = new ArrayList<>();
+        List<Object[]> data = new ArrayList<>();
+        List<Object[]> footers = new ArrayList<>();
+
+        for (int i = 0; i < grid.getHeaderRowCount(); i++) {
+            Object[] row = new Object[grid.getColumns().size()];
+            for (int j = 0; j < grid.getColumns().size(); j++) {
+                Grid.Column column = grid.getColumns().get(j);
+                row[j] = grid.getHeaderRow(i).getCell(column.getPropertyId()).getText();
+            }
+            headers.add(row);
+        }
+
+        for (Object itemId : grid.getContainerDataSource().getItemIds()) {
+            Item gridRow = grid.getContainerDataSource().getItem(itemId);
+            Object[] row = new Object[grid.getColumns().size()];
+            for (int j = 0; j < grid.getColumns().size(); j++) {
+                Property itemProperty = gridRow.getItemProperty(gridRow.getItemPropertyIds().toArray()[j]);
+                row[j] = itemProperty.getValue();
+            }
+            data.add(row);
+        }
+
+        for (int i = 0; i < grid.getFooterRowCount(); i++) {
+            Object[] row = new Object[grid.getColumns().size()];
+            for (int j = 0; j < grid.getColumns().size(); j++) {
+                Grid.Column column = grid.getColumns().get(j);
+                row[j] = grid.getFooterRow(i).getCell(column.getPropertyId()).getText();
+            }
+            footers.add(row);
+        }
+        saveGridToFile(headers, data, footers, out);
+    }
+
+    public static void saveGridToFile(List<Object[]> headers, List<Object[]> data, List<Object[]> footers, OutputStream out) throws IOException {
         Workbook wb = new HSSFWorkbook();
         Sheet s = wb.createSheet();
 
@@ -56,44 +94,40 @@ public class YoncaGridXLSExporter {
         headerCellStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
         int rownum = 0;
-        for (int i = 0; i < grid.getHeaderRowCount(); i++) {
+        for (Object[] header : headers) {
             Row row = s.createRow(rownum++);
-            for (int j = 0; j < grid.getColumns().size(); j++) {
-                Grid.Column column = grid.getColumns().get(j);
+            for (int j = 0; j < header.length; j++) {
                 //header ekle
                 Cell cell = row.createCell(j);
                 cell.setCellStyle(headerCellStyle);
-                cell.setCellValue(grid.getHeaderRow(i).getCell(column.getPropertyId()).getText());
+                cell.setCellValue(Convert.to(header[j], String.class));
             }
         }
 
-        for (Object itemId : grid.getContainerDataSource().getItemIds()) {
-            Row row = s.createRow(rownum++);
-            Item gridRow = grid.getContainerDataSource().getItem(itemId);
-
-            for (int j = 0; j < grid.getColumns().size(); j++) {
-                Cell cell = row.createCell(j);
-                Property itemProperty = gridRow.getItemProperty(gridRow.getItemPropertyIds().toArray()[j]);
-                if (itemProperty.getValue() instanceof Integer) {
-                    cell.setCellValue((Integer) itemProperty.getValue());
-                } else if (itemProperty.getValue() instanceof Double) {
-                    cell.setCellValue((Double) itemProperty.getValue());
-                } else if (itemProperty.getValue() instanceof String) {
-                    cell.setCellValue((String) itemProperty.getValue());
+        for (Object[] row : data) {
+            Row xlsRow = s.createRow(rownum++);
+            for (int j = 0; j < row.length; j++) {
+                Object cell = row[j];
+                Cell xlsCell = xlsRow.createCell(j);
+                if (cell instanceof Integer) {
+                    xlsCell.setCellValue((Integer) cell);
+                } else if (cell instanceof Double) {
+                    xlsCell.setCellValue((Double) cell);
+                } else if (cell instanceof String) {
+                    xlsCell.setCellValue((String) cell);
                 } else {
-                    cell.setCellValue(Util.nvl(itemProperty.getValue(), (Object) "").toString());
+                    xlsCell.setCellValue(Util.nvl(cell, (Object) "").toString());
                 }
             }
         }
 
-        for (int i = 0; i < grid.getFooterRowCount(); i++) {
+        for (Object[] footer : footers) {
             Row row = s.createRow(rownum++);
-            for (int j = 0; j < grid.getColumns().size(); j++) {
-                Grid.Column column = grid.getColumns().get(j);
+            for (int j = 0; j < footer.length; j++) {
                 //header ekle
                 Cell cell = row.createCell(j);
                 cell.setCellStyle(headerCellStyle);
-                cell.setCellValue(grid.getFooterRow(i).getCell(column.getPropertyId()).getText());
+                cell.setCellValue(Convert.to(footer[j], String.class));
             }
         }
 
