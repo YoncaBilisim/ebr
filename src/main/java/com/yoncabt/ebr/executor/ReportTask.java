@@ -9,6 +9,7 @@ import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
+import com.yoncabt.ebr.exceptions.ReportException;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
@@ -49,7 +50,7 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
 
     private ReportResponse response;
 
-    private Exception exception;
+    private ReportException exception;
 
     private EBRConnection connection;
 
@@ -95,7 +96,7 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
             status = Status.EXCEPTION;
             logManager.error(request.getUuid() + " hata", ex);
             synchronized (this) {
-                exception = ex;
+                exception = new ReportException(ex);
             }
         } finally {
             if (connection != null) {
@@ -118,7 +119,7 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
     /**
      * @return the exception
      */
-    public Exception getException() {
+    public ReportException getException() {
         return exception;
     }
 

@@ -17,7 +17,9 @@ import com.vaadin.ui.Window;
 import com.vaadin.ui.renderers.ButtonRenderer;
 import com.vaadin.ui.renderers.ClickableRenderer;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
+import com.yoncabt.ebr.ReportService;
 import com.yoncabt.ebr.executor.ReportTask;
+import com.yoncabt.ebr.executor.Status;
 import com.yoncabt.ebr.ws.ReportWS;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,7 +39,7 @@ import org.springframework.http.ResponseEntity;
 public class ReportStatusWindow extends Window {
 
     @Autowired
-    private ReportWS reportWS;
+    private ReportService reportWS;
 
     private Grid grid;
 
@@ -77,7 +79,7 @@ public class ReportStatusWindow extends Window {
         ret.addColumn("göster", String.class).setRenderer(
                 new ButtonRenderer((ClickableRenderer.RendererClickEvent e) -> {
                     String uuid = (String) grid.getContainerDataSource().getItem(e.getItemId()).getItemProperty("uuid").getValue();
-                    if (reportWS.status(uuid).getStatusCode() == HttpStatus.OK) {
+                    if (reportWS.status(uuid) == Status.FINISH) {
                         Page.getCurrent().open("/ebr/ws/1.0/output/" + uuid, "_new", false);
                     } else {
                         Notification.show("Bitmiş bir rapor yok");
@@ -93,13 +95,13 @@ public class ReportStatusWindow extends Window {
     private void fillTheGrid() {
         grid.getSelectionModel().reset();
         grid.getContainerDataSource().removeAllItems();
-        ResponseEntity<List<String>> reports = reportWS.reports();
+        List<String> reports = reportWS.reports();
         List<ReportTask> reportTasks = new ArrayList<>();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        for (int i = 0; i < reports.getBody().size(); i++) {
-            String id = reports.getBody().get(i);
-            ResponseEntity<ReportTask> task = reportWS.detail(id);
-            reportTasks.add(task.getBody());
+        for (int i = 0; i < reports.size(); i++) {
+            String id = reports.get(i);
+            ReportTask task = reportWS.detail(id);
+            reportTasks.add(task);
         }
         Collections.sort(reportTasks);
         reportTasks.stream().forEach((ReportTask task) -> {

@@ -5,38 +5,27 @@
  */
 package com.yoncabt.ebr.ws;
 
-import com.yoncabt.abys.core.util.EBRConf;
-import com.yoncabt.abys.core.util.EBRParams;
-import com.yoncabt.abys.core.util.log.FLogManager;
-import com.yoncabt.ebr.ReportIDGenerator;
-import com.yoncabt.ebr.ReportOutputFormat;
-import com.yoncabt.ebr.ReportRequest;
-import com.yoncabt.ebr.ReportResponse;
-import com.yoncabt.ebr.executor.ReportList;
-import com.yoncabt.ebr.executor.ReportTask;
-import com.yoncabt.ebr.executor.Status;
-import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
-import com.yoncabt.ebr.logger.ReportLogger;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import java.util.NoSuchElementException;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.yoncabt.abys.core.util.log.FLogManager;
+import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.ReportRequest;
+import com.yoncabt.ebr.ReportResponse;
+import com.yoncabt.ebr.ReportService;
+import com.yoncabt.ebr.executor.ReportTask;
+import com.yoncabt.ebr.executor.Status;
 
 /**
  *
@@ -46,25 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReportWS {
 
     @Autowired
-    private ApplicationContext context;
-
-    @Autowired
-    private ThreadPoolTaskExecutor executor;
-
-    @Autowired
-    private ThreadPoolTaskScheduler scheduler;
-
-    @Autowired
-    private ReportList requestList;
-
-    @Autowired
-    private ReportIDGenerator reportIDGenerator;
-
-    @Autowired
-    private ReportLogger reportLogger;
-
-    @Autowired
-    private DataSourceManager dataSourceManager;
+    private ReportService reportService;
 
     private static FLogManager logManager = FLogManager.getLogger(ReportTask.class);
 
@@ -73,7 +44,7 @@ public class ReportWS {
             method = RequestMethod.GET,
             produces = "application/json")
     public ResponseEntity<List<String>> dataSourceNames() {
-        return ResponseEntity.ok(new ArrayList<String>(dataSourceManager.getDataSourceNames()));
+        return ResponseEntity.ok(new ArrayList<String>(reportService.dataSourceNames()));
     }
 
     @RequestMapping(
@@ -83,27 +54,38 @@ public class ReportWS {
     public ResponseEntity<ReportResponse> status(
             @PathVariable("requestId") String requestId
     ) {
-        ReportTask task = requestList.get(requestId);
-        if (task == null) {//başlamamış
+        Status status = reportService.status(requestId);
+        if (status == null) {//başlamamış
             logManager.info("status query :YOK !!! " + requestId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-        logManager.info("status query :" + task.getRequest().getUuid());
-        synchronized (task) {
-            if (task.getStarted() == 0) {//başlamamış
-                logManager.info("status query :" + task.getRequest().getUuid() + " :başlamış");
+        logManager.info("status query :" + requestId);
+        switch (status) {
+            case WAIT:
+                logManager.info("status query :" + requestId + " :başlamış");
                 return ResponseEntity.status(HttpStatus.CREATED).body(null);
-            }
-            if (task.getEnded() == 0) {//devam ediyor
-                logManager.info("status query :" + task.getRequest().getUuid() + " :devam ediyor");
+
+            case RUN:
+                logManager.info("status query :" + requestId + " :devam ediyor");
                 return ResponseEntity.status(HttpStatus.PROCESSING).body(null);
-            }
-            if (task.getException() != null) {
-                logManager.info("status query :" + task.getRequest().getUuid() + " :hata");
-                return ResponseEntity.status(420).body(null);//420 Method Failure
-            }
-            logManager.info("status query :" + task.getRequest().getUuid() + " :bitmiş");
-            return ResponseEntity.status(HttpStatus.OK).body(null);
+
+            case EXCEPTION:
+                logManager.info("status query :" + requestId + " :hata");
+                return ResponseEntity.status(420).body(null);// 420 Method Failure
+
+            case FINISH:
+                logManager.info("status query :" + requestId + " :bitmiş");
+                return ResponseEntity.status(HttpStatus.OK).body(null);
+
+            case CANCEL:
+                logManager.info("status query :" + requestId + " :iptal");
+                return ResponseEntity.status(HttpStatus.OK).body(null);
+
+            case SCHEDULED:
+                logManager.info("status query :" + requestId + " :başlamış");
+                return ResponseEntity.status(HttpStatus.CREATED).body(null);
+            default:
+                throw new IllegalArgumentException(status.name());
         }
     }
 
@@ -112,7 +94,7 @@ public class ReportWS {
             method = RequestMethod.GET,
             produces = "application/json")
     public ResponseEntity<List<String>> reports() {
-        return ResponseEntity.ok(requestList.getAllIds());
+        return ResponseEntity.ok(reportService.reports());
     }
 
     @RequestMapping(
@@ -122,7 +104,7 @@ public class ReportWS {
     public ResponseEntity<ReportTask> detail(
             @PathVariable("requestId") String requestId
     ) {
-        ReportTask task = requestList.get(requestId);
+        ReportTask task = reportService.detail(requestId);
         if (task == null) {//başlamamış
             logManager.info("output :YOK !!! " + requestId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -137,14 +119,13 @@ public class ReportWS {
     public ResponseEntity<ReportTask> cancel(
             @PathVariable("requestId") String requestId
     ) {
-        ReportTask task = requestList.get(requestId);
-        if (task == null) {//başlamamış
-            logManager.info("output :YOK !!! " + requestId);
+        try {
+            reportService.cancel(requestId);
+            return ResponseEntity.status(HttpStatus.OK).body(null);
+        } catch (NoSuchElementException e) {
+            logManager.info("rapor :YOK !!! " + requestId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-        task.cancel();
-        task.setSentToClient(true);
-        return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
     @RequestMapping(
@@ -153,18 +134,19 @@ public class ReportWS {
     public ResponseEntity<byte[]> output(
             @PathVariable("requestId") String requestId
     ) throws IOException {
-        ReportTask task = requestList.get(requestId);
-        if (task == null) {//başlamamış
+        try {
+            byte[] output = reportService.output(requestId);
+            ReportTask task = reportService.detail(requestId);
+            logManager.info("output :" + requestId);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .contentType(ReportOutputFormat.valueOf(task.getRequest().getExtension()).getMediaType())
+                    .lastModified(task.getEnded())
+                    .header("Content-Disposition", "inline; filename=" + requestId + "." + task.getRequest().getExtension())
+                    .body(output);
+        } catch (NoSuchElementException e) {
             logManager.info("output :YOK !!! " + requestId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-        task.setSentToClient(true);
-        logManager.info("output :" + task.getRequest().getUuid());
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(ReportOutputFormat.valueOf(task.getRequest().getExtension()).getMediaType())
-                .lastModified(task.getEnded())
-                .header("Content-Disposition", "inline; filename=" + requestId + "." + task.getRequest().getExtension())
-                .body(reportLogger.getReportData(requestId));
     }
 
     @RequestMapping(
@@ -174,13 +156,7 @@ public class ReportWS {
     public ResponseEntity<String> error(
             @PathVariable("requestId") String requestId
     ) throws IOException {
-        ReportTask task = requestList.get(requestId);
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        task.getException().printStackTrace(pw);
-        pw.flush();
-        task.setSentToClient(true);
-        return ResponseEntity.status(HttpStatus.OK).body(sw.getBuffer().toString());
+        return ResponseEntity.status(HttpStatus.OK).body(reportService.error(requestId));
     }
 
     @RequestMapping(
@@ -192,41 +168,7 @@ public class ReportWS {
     public ResponseEntity<ReportResponse> request(
             @RequestBody(required = true) ReportRequest req
     ) {
-        ReportTask task = context.getBean(ReportTask.class);
-        if (StringUtils.isBlank(req.getLocale())) {
-            req.setLocale(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_DEFAULT_LOCALE, "tr_TR"));
-        }
-        if (StringUtils.isBlank(req.getUuid())) {
-            req.setUuid(reportIDGenerator.generate());
-        }
-        if (FilenameUtils.getExtension(req.getReport()).isEmpty()) {
-            req.setReport(req.getReport() + ".jrxml");
-        }
-        task.setRequest(req);
-        requestList.add(task);
-        if (req.getScheduleTime() > 0) {
-            task.setStatus(Status.SCHEDULED);
-            scheduler.schedule(task, new Date(req.getScheduleTime()));
-            ReportResponse res = new ReportResponse();
-            res.setUuid(req.getUuid());
-            return ResponseEntity.status(HttpStatus.CREATED).body(res);
-        } else if (req.isAsync()) {
-            executor.execute(task);
-            ReportResponse res = new ReportResponse();
-            res.setUuid(req.getUuid());
-            if (task.getException() != null) {
-                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
-            }
-            return ResponseEntity.status(HttpStatus.CREATED).body(res);
-        } else {
-            //hemen çalışacak olanlar buraya
-            task.run();
-            if (task.getException() != null) {
-                task.getResponse().setExceptionLog(task.getException() + "\n" + ExceptionUtils.getFullStackTrace(task.getException()));
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(task.getResponse());
-            }
-            return ResponseEntity.status(HttpStatus.OK).body(task.getResponse());
-        }
+        ReportTask res = reportService.request(req);
+        return ResponseEntity.status(res.getStatus().getHttpStatus()).body(res.getResponse());
     }
 }
