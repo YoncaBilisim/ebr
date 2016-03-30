@@ -12,6 +12,7 @@ import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
 import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -67,11 +69,12 @@ public class BaseDBReportLogger implements ReportLogger {
     public void logReport(ReportRequest request, ReportOutputFormat outputFormat, InputStream reportData) throws IOException {
         String table = EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_DBLOGGER_TABLENAME, "log_reports");
         String sql = String.format("update %s set report_data = ? where id = ?", table);
+        byte[] buff = IOUtils.toByteArray(reportData);
 
         try (EBRConnection con = dataSourceManager.get("dblogger", request.getUser(), "EBR", getClass().getSimpleName());){
             con.setAutoCommit(false);
             try (PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setBinaryStream(1, reportData);
+                ps.setBinaryStream(1, new ByteArrayInputStream(buff));
                 ps.setString(2, request.getUuid());
                 if (ps.executeUpdate() == 1) {// daha önce loglanmış bir rapor ise sadece güncelle
                     con.commit();
@@ -97,7 +100,7 @@ public class BaseDBReportLogger implements ReportLogger {
 
                 JSONObject jo = new JSONObject(request.getReportParams());
                 ps.setString(4, jo.toString(4));
-                ps.setBinaryStream(5, reportData);
+                ps.setBinaryStream(5, new ByteArrayInputStream(buff));
                 ps.setString(6, request.getExtension());
 
                 ps.setString(7, request.getDatasourceName());
