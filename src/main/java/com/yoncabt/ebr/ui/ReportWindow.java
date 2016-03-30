@@ -35,6 +35,7 @@ import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportService;
 import com.yoncabt.ebr.executor.BaseReport;
+import com.yoncabt.ebr.executor.ReportTask;
 import com.yoncabt.ebr.executor.YoncaMailSender;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
@@ -265,7 +266,7 @@ public class ReportWindow extends UI {
         request.setUuid(reportIDGenerator.generate());
         request.setLocale((String) reportLocale.getValue());
         request.setDatasourceName(reportDefinition.getDataSource());
-        request.setExtension(((ReportOutputFormat)reportType.getValue()).name());
+        request.setExtension(((ReportOutputFormat) reportType.getValue()).name());
         request.setAsync(false);
         request.setEmail(email.getValue());
         String dataSourceName = StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default");
@@ -293,8 +294,12 @@ public class ReportWindow extends UI {
     }
 
     private void fillTheGridJRXML(ReportRequest request, EBRConnection con) throws SQLException, IOException {
-        reportService.request(request);
-        Page.getCurrent().open("/ebr/ws/1.0/output/" + request.getUuid(), "_blank");
+        ReportTask task = reportService.request(request);
+        if (task.getException() != null) {
+            Notification.show("Hata", Notification.Type.ERROR_MESSAGE);
+        } else {
+            Page.getCurrent().open("/ebr/ws/1.0/output/" + request.getUuid(), "_blank");
+        }
     }
 
     private void fillTheGridSQL(ReportRequest request, EBRConnection con) throws SQLException, IOException {
