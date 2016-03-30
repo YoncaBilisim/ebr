@@ -6,8 +6,12 @@
 package com.yoncabt.ebr.executor;
 
 import com.yoncabt.ebr.FieldType;
+import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.ReportRequest;
+import com.yoncabt.ebr.exceptions.ReportException;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
+import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -116,5 +120,7 @@ public abstract class BaseReport {
         }
         return ret;
     }
+
+    public abstract void exportTo(ReportRequest request, ReportOutputFormat outputFormat, EBRConnection connection, ReportDefinition reportDefinition) throws ReportException, IOException;
 
 }

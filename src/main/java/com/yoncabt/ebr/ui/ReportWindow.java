@@ -15,6 +15,7 @@ import com.vaadin.shared.ui.grid.HeightMode;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.DateField;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Grid;
@@ -29,23 +30,24 @@ import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
 import com.yoncabt.ebr.FieldType;
+import com.yoncabt.ebr.ReportIDGenerator;
+import com.yoncabt.ebr.ReportOutputFormat;
+import com.yoncabt.ebr.ReportRequest;
+import com.yoncabt.ebr.ReportService;
 import com.yoncabt.ebr.executor.BaseReport;
+import com.yoncabt.ebr.executor.YoncaMailSender;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
 import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.executor.sql.SQLReport;
-import com.yoncabt.ebr.jdbcbridge.JDBCNamedParameters;
 import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
 import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
+import com.yoncabt.ebr.logger.ReportLogger;
 import com.yoncabt.ebr.util.ResultSetDeserializer;
-import com.yoncabt.ebr.util.ResultSetSerializer;
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,14 +72,45 @@ public class ReportWindow extends UI {
     private FormLayout formLayout = new FormLayout();
     private Grid grid;
     private String sql;
-    private BaseReport sqlreport;
+    private String reportName;
+    private BaseReport report;
     private HorizontalLayout gridLayout;
     private Button btnExport;
+    private ComboBox reportType = new ComboBox("Rapor Tipi");
+    private ComboBox reportLocale = new ComboBox("Dil");
+    private TextField email = new TextField("email");
+    private ReportDefinition reportDefinition;
+
     @Autowired
     private DataSourceManager dataSourceManager;
+    @Autowired
+    private ReportIDGenerator reportIDGenerator;
+    @Autowired
+    private ReportLogger reportLogger;
+    @Autowired
+    private SQLReport sqlReport;
+    @Autowired
+    private JasperReport jasperReport;
+    @Autowired
+    private YoncaMailSender mailSender;
+    @Autowired
+    private ReportService reportService;
 
     @Override
     protected void init(VaadinRequest request) {
+        reportType.setNullSelectionAllowed(false);
+
+        reportLocale.setNullSelectionAllowed(false);
+
+        reportLocale.addItem("tr_TR");
+        reportLocale.setItemCaption("tr_TR", "Türkçe");
+
+        reportLocale.addItem("en_US");
+        reportLocale.setItemCaption("en_US", "English");
+
+        email.setEnabled(mailSender.isConfigured());
+
+        grid = new Grid();
 
         try {
             MenuBar mb = createMenuBar();
@@ -100,7 +133,9 @@ public class ReportWindow extends UI {
             event.getButton().setEnabled(true);
         });
         gridLayout = new HorizontalLayout();
-        createGrid();
+        if (report instanceof SQLReport) {
+            createGrid();
+        }
         btnExport = YoncaGridXLSExporter.createDownloadButton(grid, "raporlar.xls");
 
         gridLayout.setSizeFull();
@@ -132,15 +167,16 @@ public class ReportWindow extends UI {
             if (reportFile.exists()) {
                 if (FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("sql")) {
                     sql = FileUtils.readFileToString(reportFile, "utf-8").trim();
-                    sqlreport = new SQLReport();
-                    reportDefinition = ((SQLReport) sqlreport).loadDefinition(JasperReport.getReportFile(frag));
+                    report = sqlReport;
+                    reportDefinition = ((SQLReport) report).loadDefinition(JasperReport.getReportFile(frag));
                 } else if (FilenameUtils.getExtension(reportFile.getName()).equalsIgnoreCase("jrxml")) {
                     sql = "";
-                    sqlreport = new JasperReport();
-                    reportDefinition = ((JasperReport) sqlreport).loadDefinition(JasperReport.getReportFile(frag));
+                    report = jasperReport;
+                    reportDefinition = ((JasperReport) report).loadDefinition(JasperReport.getReportFile(frag));
                 } else {
                     Notification.show(frag + " bilinmeyen rapor türü", Notification.Type.ERROR_MESSAGE);
                 }
+                this.reportName = frag;
                 showFields(reportDefinition, window, formLayout);
             } else {
                 Notification.show(frag + " raporu sisteminizde yok", Notification.Type.ERROR_MESSAGE);
@@ -150,7 +186,6 @@ public class ReportWindow extends UI {
             Logger.getLogger(ReportWindow.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    private ReportDefinition reportDefinition;
 
     private void showFields(ReportDefinition definition, final Window w, final FormLayout fl) throws AssertionError, JSONException {
         fl.removeAllComponents();
@@ -200,6 +235,19 @@ public class ReportWindow extends UI {
             fl.addComponent(comp);
 
         }
+        if (report instanceof SQLReport) {
+            reportType.addItem(ReportOutputFormat.xls);
+            reportType.setItemCaption(ReportOutputFormat.xls, ReportOutputFormat.xls.getTypeName());
+        } else {
+            for (ReportOutputFormat value : ReportOutputFormat.values()) {
+                reportType.addItem(value);
+                reportType.setItemCaption(value, value.getTypeName());
+            }
+        }
+        reportType.setValue(ReportOutputFormat.xls);
+        fl.addComponent(reportType);
+        fl.addComponent(reportLocale);
+        fl.addComponent(email);
     }
 
     public AbstractField findFormField(String id) {
@@ -213,80 +261,59 @@ public class ReportWindow extends UI {
 
     private void fillTheGrid() throws SQLException, IOException {
         gridLayout.removeComponent(grid);
-        createGrid();
+        ReportRequest request = new ReportRequest();
+        request.setUuid(reportIDGenerator.generate());
+        request.setLocale((String) reportLocale.getValue());
+        request.setDatasourceName(reportDefinition.getDataSource());
+        request.setExtension(((ReportOutputFormat)reportType.getValue()).name());
+        request.setAsync(false);
+        request.setEmail(email.getValue());
+        String dataSourceName = StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default");
         for (ReportParam reportParam : reportDefinition.getReportParams()) {
+            String value = (String) findFormField(reportParam.getName()).getValue();
             if (reportParam.isRaw()) {
-                String value = (String) findFormField(reportParam.getName()).getValue();
                 value = StringEscapeUtils.escapeSql(value);
                 Pattern pattern = Pattern.compile(":\\b" + reportParam.getName() + "\\b");
                 sql = pattern.matcher(sql).replaceAll(value);
-            }
-        }
-        JDBCNamedParameters p = new JDBCNamedParameters(sql);
-        for (ReportParam reportParam : reportDefinition.getReportParams()) {
-            if (reportParam.isRaw()) {
-                //
             } else {
-                FieldType type = reportParam.getFieldType();
-                switch (type) {
-                    case STRING: {
-                        String value = (String) findFormField(reportParam.getName()).getValue();
-                        if (!StringUtils.isEmpty(value)) {
-                            p.set(reportParam.getName(), value);
-                        }
-                        break;
-                    }
-                    case INTEGER: {
-                        String value = (String) findFormField(reportParam.getName()).getValue();
-                        if (!StringUtils.isEmpty(value)) {
-                            p.set(reportParam.getName(), Integer.parseInt(value));
-                        }
-                        break;
-                    }
-                    case LONG: {
-                        String value = (String) findFormField(reportParam.getName()).getValue();
-                        if (!StringUtils.isEmpty(value)) {
-                            p.set(reportParam.getName(), Long.parseLong(value));
-                        }
-                        break;
-                    }
-                    case DOUBLE: {
-                        String value = (String) findFormField(reportParam.getName()).getValue();
-                        p.set(reportParam.getName(), Double.parseDouble(value));
-                        break;
-                    }
-                    case DATE: {
-                        Date value = (Date) findFormField(reportParam.getName()).getValue();
-                        p.set(reportParam.getName(), value);
-                        break;
-                    }
-                    default:
-                        throw new AssertionError(reportParam.getName() + " in tipi tanınmıyor :" + reportParam.getFieldType());
-                }
+                request.getReportParams().put(reportParam.getName(), value);
             }
         }
-        final String dataSourceName = StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default");
+        request.setReportQuery(sql);
+        request.setReport(reportName);
+        try (EBRConnection con = dataSourceManager.get(dataSourceName, "EBR", "SQL", reportDefinition.getFile().getAbsolutePath());) {
+            if (report instanceof JasperReport) {
+                fillTheGridJRXML(request, con);
+            } else if (report instanceof SQLReport) {
+                fillTheGridSQL(request, con);
+            } else {
+                throw new IllegalArgumentException(String.valueOf(report));
+            }
+        }
+    }
 
-        try (EBRConnection con = dataSourceManager.get(dataSourceName, "---", "EBR", reportDefinition.getFile().getAbsolutePath());
-                PreparedStatement st = p.prepare(con);
-                ResultSet res = st.executeQuery()) {
-            File file = File.createTempFile("ebr_ser_", ".json");
-            ResultSetSerializer ser = new ResultSetSerializer(res, file);
-            ser.serialize();
-            FileInputStream fis = new FileInputStream(file);
-            ResultSetDeserializer des = new ResultSetDeserializer(fis);
-            List<String> names = des.getNames();
-            List<FieldType> types = des.getTypes();
-            for (int i = 0; i < types.size(); i++) {
-                Class type = types.get(i).getJavaType();
-                String name = names.get(i);
-                grid.addColumn(name, type);
-            }
-            List<Object[]> data = des.getData();
-            data.stream().forEach((d) -> {
-                grid.addRow(d);
-            });
+    private void fillTheGridJRXML(ReportRequest request, EBRConnection con) throws SQLException, IOException {
+        reportService.request(request);
+        Page.getCurrent().open("/ebr/ws/1.0/output/" + request.getUuid(), "_blank");
+    }
+
+    private void fillTheGridSQL(ReportRequest request, EBRConnection con) throws SQLException, IOException {
+        createGrid();
+        report.exportTo(request, null, con, reportDefinition);
+        byte[] buf = reportLogger.getReportData(request.getUuid());
+        ResultSetDeserializer des = new ResultSetDeserializer(new ByteArrayInputStream(buf));
+        List<String> names = des.getNames();
+        List<FieldType> types = des.getTypes();
+        for (int i = 0; i < types.size(); i++) {
+            Class type = types.get(i).getJavaType();
+            String name = names.get(i);
+            grid.addColumn(name, type);
         }
+        List<Object[]> data = des.getData();
+        data.stream().forEach((d) -> {
+            grid.addRow(d);
+        });
+
         grid.recalculateColumnWidths();
     }
 

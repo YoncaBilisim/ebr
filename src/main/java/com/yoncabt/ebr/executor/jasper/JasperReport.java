@@ -10,6 +10,7 @@ import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
+import com.yoncabt.ebr.exceptions.ReportException;
 import com.yoncabt.ebr.executor.BaseReport;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
@@ -232,11 +233,12 @@ public class JasperReport extends BaseReport {
         this.file = file;
     }
 
+    @Override
     public void exportTo(
             ReportRequest request,
             ReportOutputFormat outputFormat,
             EBRConnection connection,
-            ReportDefinition reportDefinition) throws JRException, IOException {
+            ReportDefinition reportDefinition) throws ReportException, IOException {
         Map<String, Object> params = request.getReportParams();
         String locale = request.getLocale();
         String uuid = request.getUuid();
@@ -263,25 +265,25 @@ public class JasperReport extends BaseReport {
         //alttaki satır tehlikeli olabilir mi ?
         String resourceFileName = "messages_" + locale + ".properties";
         try {
-            File resourceFile = new File(jrxmlFile.getParentFile(), resourceFileName);
-            Properties properties = new Properties();
-            try (FileInputStream fis = new FileInputStream(resourceFile)) {
-                properties.load(fis);
+        File resourceFile = new File(jrxmlFile.getParentFile(), resourceFileName);
+        Properties properties = new Properties();
+        try (FileInputStream fis = new FileInputStream(resourceFile)) {
+            properties.load(fis);
+        }
+        ResourceBundle rb = new ResourceBundle() {
+
+            @Override
+            protected Object handleGetObject(String key) {
+                return properties.get(key);
             }
-            ResourceBundle rb = new ResourceBundle() {
 
-                @Override
-                protected Object handleGetObject(String key) {
-                    return properties.get(key);
-                }
-
-                @Override
-                public Enumeration<String> getKeys() {
-                    return (Enumeration<String>) ((Enumeration<?>) properties.keys());
-                }
-            };
-            // FIXME yerelleştime dosyaları buradan okunacak
-            params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
+            @Override
+            public Enumeration<String> getKeys() {
+                return (Enumeration<String>) ((Enumeration<?>) properties.keys());
+            }
+        };
+        // FIXME yerelleştime dosyaları buradan okunacak
+        params.put(JRParameter.REPORT_RESOURCE_BUNDLE, rb);
         } catch (FileNotFoundException e) {
             logManager.info(resourceFileName + " file does not found!");
         }
@@ -291,7 +293,12 @@ public class JasperReport extends BaseReport {
         JRAbstractLRUVirtualizer virtualizer = new JRFileVirtualizer(maxSize, virtDir);
         params.put(JRParameter.REPORT_VIRTUALIZER, virtualizer);
 
-        net.sf.jasperreports.engine.JasperReport jasperReport = (net.sf.jasperreports.engine.JasperReport) JRLoader.loadObject(com.yoncabt.ebr.executor.jasper.JasperReport.compileIfRequired(jrxmlFile));
+        net.sf.jasperreports.engine.JasperReport jasperReport;
+        try {
+            jasperReport = (net.sf.jasperreports.engine.JasperReport) JRLoader.loadObject(com.yoncabt.ebr.executor.jasper.JasperReport.compileIfRequired(jrxmlFile));
+        } catch (JRException ex) {
+            throw new ReportException(ex);
+        }
         for (JRParameter param : jasperReport.getParameters()) {
             Object val = params.get(param.getName());
             if (val == null) {
@@ -301,10 +308,15 @@ public class JasperReport extends BaseReport {
         }
         reportLogger.logReport(request, outputFormat, new ByteArrayInputStream(new byte[0]));
 
-        JasperPrint jasperPrint = JasperFillManager.fillReport(
-                jasperReport,
-                /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
-                connection);
+        JasperPrint jasperPrint;
+        try {
+            jasperPrint = JasperFillManager.fillReport(
+                    jasperReport,
+                    /*jasper parametreleri dğeiştiriyor*/ new HashMap<>(params),
+                    connection);
+        } catch (JRException ex) {
+            throw new ReportException(ex);
+        }
 
         File outBase = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_OUT_PATH, "/usr/local/reports/out"));
         outBase.mkdirs();
@@ -364,7 +376,11 @@ public class JasperReport extends BaseReport {
         exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
 
         exporter.setExporterOutput(output);
-        exporter.exportReport();
+        try {
+            exporter.exportReport();
+        } catch (JRException ex) {
+            throw new ReportException(ex);
+        }
         if (outputFormat.isText() && !"utf-8".equals(reportDefinition.getTextEncoding())) {
             String reportData = FileUtils.readFileToString(exportReportFile, "utf-8");
             if ("ascii".equals(reportDefinition.getTextEncoding())) {

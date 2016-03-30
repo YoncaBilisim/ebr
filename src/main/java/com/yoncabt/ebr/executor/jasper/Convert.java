@@ -19,21 +19,21 @@ public class Convert {
      * @param valueClass
      * @return
      */
-    public static Object to(Object val, Class<?> valueClass) {
+    public static <T> T to(Object val, Class<T> valueClass) {
         if(valueClass.isInstance(val)) {
-            return val;
+            return (T) val;
         }
         if(ResourceBundle.class == valueClass) { //bunu dışarı çıkartayım
-            return val;
+            return (T) val;
         }
         if(valueClass == Integer.class) {
-            return Integer.valueOf((String)val);
+            return (T) Integer.valueOf((String)val);
         }
         if(valueClass == Long.class) {
-            return Long.valueOf((String)val);
+            return (T) Long.valueOf((String)val);
         }
         if(valueClass == Short.class) {
-            return Short.valueOf((String)val);
+            return (T) Short.valueOf((String)val);
         }
         throw new IllegalArgumentException(val.getClass() + "->" + valueClass.getName());
     }

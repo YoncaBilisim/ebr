@@ -104,14 +104,20 @@ public class ReportService {
     }
 
     public byte[] output(String requestId) throws IOException {
-        ReportTask task = requestList.get(requestId);
-        if (task == null) {
-            logManager.info("output :YOK !!! " + requestId);
+        try {
+            byte[] ret = reportLogger.getReportData(requestId);
+            ReportTask task = requestList.get(requestId);
+            //FIXME use report service
+            if (task == null) {
+                logManager.info("task :YOK !!! " + requestId);
+            } else {
+                task.setSentToClient(true);
+            }
+            logManager.info("output :" + requestId);
+            return ret;
+        } catch (IOException ex) {
             throw new NoSuchElementException(requestId);
         }
-        task.setSentToClient(true);
-        logManager.info("output :" + task.getRequest().getUuid());
-        return reportLogger.getReportData(requestId);
     }
 
     public String error(String requestId) throws IOException {

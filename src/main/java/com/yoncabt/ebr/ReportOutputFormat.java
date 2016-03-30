@@ -13,24 +13,26 @@ import org.springframework.http.MediaType;
  */
 public enum ReportOutputFormat {
 
-    pdf("application/pdf", false),
-    html("text/html;charset=UTF-8", false),
-    xls("application/vnd.ms-excel", false),
-    xlsx("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", false),
-    rtf("text/rtf", false),
-    csv("text/csv", true),
-    xml("text/xml", false),
-    txt("text/plain", true),
-    docx("application/vnd.openxmlformats-officedocument.wordprocessingml.document", false),
-    odt("application/vnd.oasis.opendocument.tex", false),
-    ods("application/vnd.oasis.opendocument.spreadsheet", false),
-    jprint("application/jprint", true);
+    pdf("application/pdf", "Adobe Pdf (.pdf)", false),
+    html("text/html;charset=UTF-8", "HTML", false),
+    xls("application/vnd.ms-excel", "Microsoft Excel (.xls)", false),
+    xlsx("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Microsoft Excel (.xlsx)", false),
+    rtf("text/rtf", "Rich Text File (.rtf)", false),
+    csv("text/csv", "CSV", true),
+    xml("text/xml", "XML", false),
+    txt("text/plain", "TXT", true),
+    docx("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "Microsoft Word (.docx)", false),
+    odt("application/vnd.oasis.opendocument.tex", "Open Office (.odt)", false),
+    ods("application/vnd.oasis.opendocument.spreadsheet", "Open Office (.ods)", false),
+    jprint("application/jprint", "JRPRINT", true);
 
     private String mimeType;
+    private String typeName;
     private boolean text;
 
-    private ReportOutputFormat(String mimeType, boolean text) {
+    private ReportOutputFormat(String mimeType, String typeName, boolean text) {
         this.mimeType = mimeType;
+        this.typeName = typeName;
         this.text = text;
     }
 
@@ -46,4 +48,7 @@ public enum ReportOutputFormat {
         return text;
     }
 
+    public String getTypeName() {
+        return typeName;
+    }
 }

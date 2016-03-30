@@ -46,6 +46,7 @@ public class ReportRequest {
      * hangi rapor ?
      */
     private String report;
+    private String reportQuery;
 
     /**
      * dosya türünü belirlemek için. pdf, xls ...
@@ -219,5 +220,19 @@ public class ReportRequest {
      */
     public void setUser(String user) {
         this.user = user;
+    }
+
+    /**
+     * @return the reportQuery
+     */
+    public String getReportQuery() {
+        return reportQuery;
+    }
+
+    /**
+     * @param reportQuery the reportQuery to set
+     */
+    public void setReportQuery(String reportQuery) {
+        this.reportQuery = reportQuery;
     }
 }
