@@ -68,7 +68,7 @@ public class ReportServerApplication {
         mailProperties.put("mail.smtp.auth", EBRConf.INSTANCE.getValue("report.smtp.auth", ""));
         mailProperties.put("mail.smtp.starttls.enable", EBRConf.INSTANCE.getValue("report.smtp.starttls.enable", ""));
         mailProperties.put("mail.smtp.starttls.required", EBRConf.INSTANCE.getValue("report.smtp.starttls.required", ""));
-        mailProperties.put("mail.smtp.socketFactory.port", EBRConf.INSTANCE.getValue("report.smtp.auth", ""));
+        mailProperties.put("mail.smtp.socketFactory.port", EBRConf.INSTANCE.getValue("mail.smtp.socketFactory.port", ""));
         mailProperties.put("mail.smtp.debug", EBRConf.INSTANCE.getValue("report.smtp.debug", ""));
         mailProperties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
         mailProperties.put("mail.smtp.socketFactory.fallback", EBRConf.INSTANCE.getValue("report.smtp.socketFactory.fallback", "false"));
