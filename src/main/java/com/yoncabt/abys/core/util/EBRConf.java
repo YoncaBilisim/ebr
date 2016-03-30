@@ -131,6 +131,10 @@ public enum EBRConf {
         }
     }
 
+    public boolean hasValue(String key) {
+        return getValueFromAll(key, null) != null;
+    }
+
     public String getValue(String key, String defaultValue) {
         return getValueFromAll(key, defaultValue);
     }
