@@ -87,7 +87,7 @@ public class ReportTask implements Runnable, Comparable<ReportTask> {
             byte[] bytes = reportLogger.getReportData(request.getUuid());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(bytes, 0, bytes.length);
-            if (!StringUtils.isBlank(request.getEmail())) {
+            if (!StringUtils.isBlank(request.getEmail()) && mailSender.isConfigured()) {
                 mailSender.send(request.getEmail(), "Raporunuz ektedir", Collections.singletonMap(request.getUuid() + "." + request.getExtension(), baos.toByteArray()));
             }
             logManager.info(request.getUuid() + " bitti");

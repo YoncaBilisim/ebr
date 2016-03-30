@@ -5,13 +5,12 @@
  */
 package com.yoncabt.ebr.executor;
 
-import java.io.ByteArrayInputStream;
+import com.yoncabt.abys.core.util.EBRConf;
 import java.util.Map;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -25,6 +24,13 @@ public class YoncaMailSender {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    public boolean isConfigured() {
+        return EBRConf.INSTANCE.hasValue("report.smtp.server.address")
+                && EBRConf.INSTANCE.hasValue("report.smtp.server.address")
+                && EBRConf.INSTANCE.hasValue("report.smtp.username")
+                && EBRConf.INSTANCE.hasValue("report.smtp.password");
+    }
 
     public void send(String to, String text, Map<String, byte[]> attachments) throws MessagingException {
 
