@@ -69,8 +69,8 @@ public class ResultSetDeserializer {
                             throw new AssertionError();
                     }
                 }
-                ret.add(column.toArray());
             }
+            ret.add(column.toArray());
         }
         return ret;
     }
