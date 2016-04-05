@@ -271,12 +271,13 @@ public class ReportWindow extends UI {
         request.setEmail(email.getValue());
         String dataSourceName = StringUtils.defaultIfEmpty(reportDefinition.getDataSource(), "default");
         for (ReportParam reportParam : reportDefinition.getReportParams()) {
-            String value = (String) findFormField(reportParam.getName()).getValue();
             if (reportParam.isRaw()) {
+                String value = (String) findFormField(reportParam.getName()).getValue();
                 value = StringEscapeUtils.escapeSql(value);
                 Pattern pattern = Pattern.compile(":\\b" + reportParam.getName() + "\\b");
                 sql = pattern.matcher(sql).replaceAll(value);
             } else {
+                Object value = findFormField(reportParam.getName()).getValue();
                 request.getReportParams().put(reportParam.getName(), value);
             }
         }
