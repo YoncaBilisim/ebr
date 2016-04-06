@@ -5,7 +5,7 @@
  */
 package com.yoncabt.ebr.util;
 
-import com.yoncabt.ebr.FieldType;
+import com.yoncabt.ebr.ui.FieldType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

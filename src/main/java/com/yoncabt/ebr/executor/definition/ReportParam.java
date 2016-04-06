@@ -5,7 +5,10 @@
  */
 package com.yoncabt.ebr.executor.definition;
 
-import com.yoncabt.ebr.FieldType;
+import com.yoncabt.ebr.ui.FieldType;
+import com.yoncabt.ebr.ui.InputType;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  *
@@ -16,6 +19,7 @@ public class ReportParam<T> {
 
     private Class<T> javaType;
     private FieldType fieldType;
+    private InputType inputType;
     private String name;
     private String label;
     private String format;
@@ -23,6 +27,7 @@ public class ReportParam<T> {
     private T max;
     private T defaultValue;
     private boolean raw;
+    private Map<Object, String> lovData = new LinkedHashMap<>();
 
     public ReportParam(Class<T> type) {
         this.javaType = type;
@@ -153,5 +158,33 @@ public class ReportParam<T> {
      */
     public void setFieldType(FieldType fieldType) {
         this.fieldType = fieldType;
+    }
+
+    /**
+     * @return the lovData
+     */
+    public Map<Object, String> getLovData() {
+        return lovData;
+    }
+
+    /**
+     * @param lovData the lovData to set
+     */
+    public void setLovData(Map<Object, String> lovData) {
+        this.lovData = lovData;
+    }
+
+    /**
+     * @return the inputType
+     */
+    public InputType getInputType() {
+        return inputType;
+    }
+
+    /**
+     * @param inputType the inputType to set
+     */
+    public void setInputType(InputType inputType) {
+        this.inputType = inputType;
     }
 }

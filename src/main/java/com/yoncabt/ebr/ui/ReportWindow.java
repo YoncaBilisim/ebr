@@ -29,7 +29,6 @@ import com.vaadin.ui.Window;
 import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
-import com.yoncabt.ebr.FieldType;
 import com.yoncabt.ebr.ReportIDGenerator;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
@@ -61,6 +60,7 @@ import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 
 /**
  *
@@ -96,6 +96,8 @@ public class ReportWindow extends UI {
     private YoncaMailSender mailSender;
     @Autowired
     private ReportService reportService;
+    @Autowired
+    private ApplicationContext context;
 
     @Override
     protected void init(VaadinRequest request) {
@@ -193,38 +195,47 @@ public class ReportWindow extends UI {
         w.setCaption(definition.getCaption());
         for (ReportParam param : definition.getReportParams()) {
             AbstractField comp = null;
-            switch (param.getFieldType()) {
-                case STRING: {
-                    TextField f = new TextField(param.getLabel());
-                    comp = f;
-                    break;
-                }
-                case INTEGER: {
-                    TextField f = new TextField(param.getLabel());
-                    f.addValidator(new IntegerRangeValidator("Sayı kontrolü", (Integer) param.getMin(), (Integer) param.getMax()));
-                    comp = f;
-                    break;
-                }
-                case LONG: {
-                    TextField f = new TextField(param.getLabel());
-                    f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long) param.getMin(), (Long) param.getMax()));
-                    comp = f;
-                    break;
-                }
-                case DOUBLE: {
-                    TextField f = new TextField(param.getLabel());
-                    f.addValidator(new DoubleRangeValidator("Sayı kontrolü", (Double) param.getMin(), (Double) param.getMax()));
-                    comp = f;
-                    break;
-                }
-                case DATE: {
-                    DateField f = new DateField(param.getLabel());
-                    f.setDateFormat(param.getFormat());
-                    comp = f;
-                    break;
-                }
-                default: {
-                    throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getJavaType());
+            if (param.getInputType() == InputType.COMBO) {
+                ComboBox f = new ComboBox(param.getLabel());
+                param.getLovData().forEach((k, v) -> {
+                    f.addItem(k);
+                    f.setItemCaption(k, (String) v);
+                });
+                comp = f;
+            } else {
+                switch (param.getFieldType()) {
+                    case STRING: {
+                        TextField f = new TextField(param.getLabel());
+                        comp = f;
+                        break;
+                    }
+                    case INTEGER: {
+                        TextField f = new TextField(param.getLabel());
+                        f.addValidator(new IntegerRangeValidator("Sayı kontrolü", (Integer) param.getMin(), (Integer) param.getMax()));
+                        comp = f;
+                        break;
+                    }
+                    case LONG: {
+                        TextField f = new TextField(param.getLabel());
+                        f.addValidator(new LongRangeValidator("Sayı kontrolü", (Long) param.getMin(), (Long) param.getMax()));
+                        comp = f;
+                        break;
+                    }
+                    case DOUBLE: {
+                        TextField f = new TextField(param.getLabel());
+                        f.addValidator(new DoubleRangeValidator("Sayı kontrolü", (Double) param.getMin(), (Double) param.getMax()));
+                        comp = f;
+                        break;
+                    }
+                    case DATE: {
+                        DateField f = new DateField(param.getLabel());
+                        f.setDateFormat(param.getFormat());
+                        comp = f;
+                        break;
+                    }
+                    default: {
+                        throw new AssertionError(param.getName() + " in tipi tanınmıyor :" + param.getJavaType());
+                    }
                 }
             }
             if (param.getDefaultValue() != null) {
@@ -363,6 +374,7 @@ public class ReportWindow extends UI {
                 createMenuBar(menuItem, file);
             } else if (file.getName().endsWith(".sql")) {
                 final SQLReport r = new SQLReport();
+                context.getAutowireCapableBeanFactory().autowireBean(r);
                 String text = r.loadDefinition(file).getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");
@@ -372,6 +384,7 @@ public class ReportWindow extends UI {
                 });
             } else if (file.getName().endsWith(".jrxml")) {//FIXME support for compiled jasper files
                 final JasperReport r = new JasperReport();
+                context.getAutowireCapableBeanFactory().autowireBean(r);
                 String text = r.loadDefinition(file).getCaption();
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");

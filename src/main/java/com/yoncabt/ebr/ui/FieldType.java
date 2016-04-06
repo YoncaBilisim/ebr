@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.yoncabt.ebr;
+package com.yoncabt.ebr.ui;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -70,7 +70,7 @@ public enum FieldType {
     public static FieldType valueOf(ResultSetMetaData md, int column) throws SQLException {
         if (md.getColumnType(column) == Types.VARCHAR || md.getColumnType(column) == Types.CHAR) {
             return STRING;
-        } else if (md.getColumnType(column) == Types.DATE) {
+        } else if (md.getColumnType(column) == Types.DATE || md.getColumnType(column) == Types.TIMESTAMP) {
             return DATE;
         } else if (md.getColumnType(column) == Types.NUMERIC) {
             if (md.getScale(column) > 0) {

@@ -1,6 +1,6 @@
 package com.yoncabt.ebr.util;
 
-import com.yoncabt.ebr.FieldType;
+import com.yoncabt.ebr.ui.FieldType;
 import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -20,6 +20,7 @@ public class ResultSetSerializer {
     private ResultSet res;
     private JSONWriter jw;
     private File file;
+    private List<String> columnNames = new ArrayList<>();
 
     private List<FieldType> types = new ArrayList<>();
 
@@ -41,16 +42,15 @@ public class ResultSetSerializer {
     }
 
     private void writeDefinition() throws SQLException {
-        List<String> names = new ArrayList<>();
         List<String> typeNames = new ArrayList<>();
         ResultSetMetaData md = res.getMetaData();
 
         for (int i = 0; i < md.getColumnCount(); i++) {
-            names.add(md.getColumnName(i + 1));
+            columnNames.add(md.getColumnName(i + 1));
             types.add(FieldType.valueOf(md, i + 1));
             typeNames.add(FieldType.valueOf(md, i + 1).name());
         }
-        jw.key("names").value(names);
+        jw.key("names").value(columnNames);
         jw.key("types").value(typeNames);
     }
 
@@ -65,26 +65,39 @@ public class ResultSetSerializer {
     private void writeColumn() throws SQLException {
         List<Object> column = new ArrayList<>(types.size());
         for (int i = 0; i < types.size(); i++) {
-            switch (types.get(i)) {
+            final FieldType type = types.get(i);
+            Object value;
+            value = readValue(res, columnNames.get(i), type);
+            column.add(value);
+        }
+        jw.value(column);
+    }
+
+    public static Object readValue(ResultSet res, String columnName, final FieldType type) throws AssertionError, SQLException {
+        Object value;
+        if (res.getString(columnName) == null) {
+            value = null;
+        } else {
+            switch (type) {
                 case DATE:
-                    column.add(res.getDate(i + 1).getTime());
+                    value = res.getDate(columnName).getTime();
                     break;
                 case STRING:
-                    column.add(res.getString(i + 1));
+                    value = res.getString(columnName);
                     break;
                 case INTEGER:
-                    column.add(res.getInt(i + 1));
+                    value = res.getInt(columnName);
                     break;
                 case LONG:
-                    column.add(res.getLong(i + 1));
+                    value = res.getLong(columnName);
                     break;
                 case DOUBLE:
-                    column.add(res.getDouble(i + 1));
+                    value = res.getDouble(columnName);
                     break;
                 default:
                     throw new AssertionError();
             }
         }
-        jw.value(column);
+        return value;
     }
 }

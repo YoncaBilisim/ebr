@@ -5,13 +5,14 @@
  */
 package com.yoncabt.ebr.executor.sql;
 
-import com.yoncabt.ebr.FieldType;
+import com.yoncabt.ebr.ui.FieldType;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.exceptions.ReportException;
 import com.yoncabt.ebr.executor.BaseReport;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import com.yoncabt.ebr.executor.definition.ReportParam;
+import com.yoncabt.ebr.executor.jasper.Convert;
 import com.yoncabt.ebr.jdbcbridge.JDBCNamedParameters;
 import com.yoncabt.ebr.jdbcbridge.pool.EBRConnection;
 import com.yoncabt.ebr.logger.ReportLogger;
@@ -72,29 +73,23 @@ public class SQLReport extends BaseReport {
                 FieldType type = reportParam.getFieldType();
                 switch (type) {
                     case STRING: {
-                        String value = (String) request.getReportParams().get(reportParam.getName());
-                        if (!StringUtils.isEmpty(value)) {
-                            p.set(reportParam.getName(), value);
-                        }
+                        String value = Convert.to(request.getReportParams().get(reportParam.getName()), String.class);
+                        p.set(reportParam.getName(), value);
                         break;
                     }
                     case INTEGER: {
-                        String value = (String) request.getReportParams().get(reportParam.getName());
-                        if (!StringUtils.isEmpty(value)) {
-                            p.set(reportParam.getName(), Integer.parseInt(value));
-                        }
+                        Integer value = Convert.to(request.getReportParams().get(reportParam.getName()), Integer.class);
+                        p.set(reportParam.getName(), value);
                         break;
                     }
                     case LONG: {
-                        String value = (String) request.getReportParams().get(reportParam.getName());
-                        if (!StringUtils.isEmpty(value)) {
-                            p.set(reportParam.getName(), Long.parseLong(value));
-                        }
+                        Long value = Convert.to(request.getReportParams().get(reportParam.getName()), Long.class);
+                        p.set(reportParam.getName(), value);
                         break;
                     }
                     case DOUBLE: {
-                        String value = (String) request.getReportParams().get(reportParam.getName());
-                        p.set(reportParam.getName(), Double.parseDouble(value));
+                        Double value = Convert.to(request.getReportParams().get(reportParam.getName()), Double.class);
+                        p.set(reportParam.getName(), value);
                         break;
                     }
                     case DATE: {
