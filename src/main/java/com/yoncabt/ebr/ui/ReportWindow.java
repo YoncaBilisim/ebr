@@ -353,6 +353,7 @@ public class ReportWindow extends UI {
     }
 
     private void createMenuBar(MenuBar.MenuItem mainItem, File dir) throws IOException, JRException {
+        //FIXME bazı kodlar servise taşıabilir
         String menuText = dir.getName();
         File folderConfig = new File(dir, EBRParams.FOLDER_EBR_JSON);
         if (folderConfig.exists()) {

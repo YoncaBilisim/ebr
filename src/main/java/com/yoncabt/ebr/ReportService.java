@@ -23,8 +23,13 @@ import com.yoncabt.abys.core.util.log.FLogManager;
 import com.yoncabt.ebr.executor.ReportList;
 import com.yoncabt.ebr.executor.ReportTask;
 import com.yoncabt.ebr.executor.Status;
+import com.yoncabt.ebr.executor.definition.ReportDefinition;
+import com.yoncabt.ebr.executor.jasper.JasperReport;
+import com.yoncabt.ebr.executor.sql.SQLReport;
 import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
 import com.yoncabt.ebr.logger.ReportLogger;
+import java.io.File;
+import net.sf.jasperreports.engine.JRException;
 
 @Component
 public class ReportService {
@@ -173,4 +178,34 @@ public class ReportService {
             return task;
         }
     }
+
+    private List<ReportDefinition> listReports(File dir) throws IOException, JRException {
+        List<ReportDefinition> reports = new ArrayList<>();
+        for (File file : dir.listFiles()) {
+            if (file.getName().charAt(0) == '.') {
+                continue;//gereksiz ama olduğu belli olsun
+            } else if (file.isDirectory()) {
+                reports.addAll(listReports(dir));
+            } else if (file.getName().endsWith(".sql")) {
+                final SQLReport r = new SQLReport();
+                context.getAutowireCapableBeanFactory().autowireBean(r);
+                ReportDefinition definition = r.loadDefinition(file);
+                reports.add(definition);
+            } else if (file.getName().endsWith(".jrxml")) {//FIXME support for compiled jasper files
+                final JasperReport r = new JasperReport();
+                context.getAutowireCapableBeanFactory().autowireBean(r);
+                ReportDefinition definition = r.loadDefinition(file);
+                reports.add(definition);
+            }
+        }
+        return reports;
+    }
+
+    public List<ReportDefinition> reportList() throws IOException, JRException {
+        File dir = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/home/myururdurmaz/reports"));
+        List<ReportDefinition> reports = new ArrayList<>();
+        reports.addAll(listReports(dir));
+        return reports;
+    }
+
 }

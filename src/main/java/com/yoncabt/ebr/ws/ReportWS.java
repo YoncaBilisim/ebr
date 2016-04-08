@@ -26,6 +26,8 @@ import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.ReportService;
 import com.yoncabt.ebr.executor.ReportTask;
 import com.yoncabt.ebr.executor.Status;
+import com.yoncabt.ebr.executor.definition.ReportDefinition;
+import net.sf.jasperreports.engine.JRException;
 
 /**
  *
@@ -45,6 +47,14 @@ public class ReportWS {
             produces = "application/json")
     public ResponseEntity<List<String>> dataSourceNames() {
         return ResponseEntity.ok(new ArrayList<String>(reportService.dataSourceNames()));
+    }
+
+    @RequestMapping(
+            value = {"/ws/1.0/reportList"},
+            method = RequestMethod.GET,
+            produces = "application/json")
+    public ResponseEntity<List<ReportDefinition>> reportList() throws IOException, JRException {
+        return ResponseEntity.ok(reportService.reportList());
     }
 
     @RequestMapping(
