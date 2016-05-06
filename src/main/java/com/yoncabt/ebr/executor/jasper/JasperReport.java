@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
 import net.sf.jasperreports.crosstabs.JRCrosstab;
 import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JRBreak;
@@ -95,6 +96,8 @@ public class JasperReport extends BaseReport {
     @Autowired
     private ReportLogger reportLogger;
 
+    private static final Map<String, Object> compileLocks = new ConcurrentHashMap<>();
+
     public File getJasperFile(String fileName) {
         File jasperBase = new File(EBRConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, "/usr/local/reports"));
         File jasperFile = new File(jasperBase, fileName.replace(".jrxml", ".jasper"));
@@ -107,7 +110,18 @@ public class JasperReport extends BaseReport {
         return jrxmlFile;
     }
 
-    public static synchronized File compileIfRequired(File jrxmlFile) throws JRException {
+    public static File compileIfRequired(File jrxmlFile) throws JRException {
+        final String absolutePath = jrxmlFile.getAbsolutePath();
+        synchronized(compileLocks) {
+            if(!compileLocks.containsKey(absolutePath))
+                compileLocks.put(absolutePath, new Object());
+        }
+        synchronized(compileLocks.get(absolutePath)) {
+            return compile(jrxmlFile);
+        }
+    }
+
+    private static File compile(File jrxmlFile) throws JRException {
         logManager.info(jrxmlFile + " compile");
         File jasperFile = new File(jrxmlFile.getAbsolutePath().replace(".jrxml", ".jasper"));
         jasperFile.getParentFile().mkdirs();
