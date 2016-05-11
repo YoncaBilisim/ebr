@@ -42,6 +42,10 @@ public class EBRParams {
     /**
      * {@value }
      */
+    public static final String REPORT_AUTHENTICATOR_IMPL = "report.authenticator.impl";
+    /**
+     * {@value }
+     */
     public static final String REPORT_LOGGER_DBLOGGER_TABLENAME = "report.logger.dblogger.tableName";
     /**
      * {@value }

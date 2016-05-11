@@ -5,7 +5,6 @@
  */
 package com.yoncabt.ebr.ui;
 
-
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.HorizontalLayout;
@@ -26,6 +25,9 @@ public class MyVaadinUI extends UI {
     @Autowired
     private ReportStatusWindow reportStatusWindow;
 
+    @Autowired
+    private LoginWindow loginWindow;
+
     private MenuBar.Command menuCommand(final Window window) {
         return (MenuBar.MenuItem selectedItem) -> {
             if (!window.isAttached()) {
@@ -34,14 +36,17 @@ public class MyVaadinUI extends UI {
         };
     }
 
-
     @Override
     protected void init(VaadinRequest vaadinRequest) {
         HorizontalLayout hl = new HorizontalLayout();
         MenuBar mb = new MenuBar();
         hl.addComponent(mb);
         setContent(hl);
-        addWindow(reportStatusWindow);
+        loginWindow.addSuccessListener(() -> {
+            reportStatusWindow.setVisible(true);
+            addWindow(reportStatusWindow);
+        });
+        addWindow(loginWindow);
     }
 
 }

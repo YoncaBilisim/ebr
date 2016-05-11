@@ -4,6 +4,8 @@ import com.yoncabt.abys.core.util.EBRConf;
 import com.yoncabt.abys.core.util.EBRParams;
 import com.yoncabt.ebr.logger.ReportLogger;
 import com.yoncabt.ebr.logger.fs.FileSystemReportLogger;
+import com.yoncabt.ebr.security.Authenticator;
+import com.yoncabt.ebr.security.AuthenticatorEBRConfImpl;
 import com.yoncabt.ebr.util.VersionUtil;
 import java.util.Properties;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,9 +35,20 @@ public class ReportServerApplication {
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS, scopeName = "prototype")
     public ReportLogger reportLogger() {
         String impl = EBRConf.INSTANCE.getValue(EBRParams.REPORT_LOGGER_IMPL, FileSystemReportLogger.class.getName());
-        ReportLogger ret;
+        return inject(ReportLogger.class, impl);
+    }
+
+    @Bean
+    @Scope(value = "vaadin-ui", proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public Authenticator authenticator() {
+        String impl = EBRConf.INSTANCE.getValue(EBRParams.REPORT_AUTHENTICATOR_IMPL, AuthenticatorEBRConfImpl.class.getName());
+        return inject(Authenticator.class, impl);
+    }
+
+    private <T> T inject(Class<T> type, String implName) {
+        T ret;
         try {
-            ret = (ReportLogger) Class.forName(impl).newInstance();
+            ret = (T) Class.forName(implName).newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
             throw new Error(ex);
         }

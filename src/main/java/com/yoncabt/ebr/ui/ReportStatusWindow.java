@@ -20,7 +20,6 @@ import com.yoncabt.abys.core.util.YoncaGridXLSExporter;
 import com.yoncabt.ebr.ReportService;
 import com.yoncabt.ebr.executor.ReportTask;
 import com.yoncabt.ebr.executor.Status;
-import com.yoncabt.ebr.ws.ReportWS;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,8 +27,6 @@ import java.util.Date;
 import java.util.List;
 import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 /**
  *
