@@ -8,6 +8,7 @@ clean:
 	rm -rf target
 
 builder:
+	git push origin master
 	ssh yonca-builder "cd ebr/ebr && git pull && make build-on-builder"
 
 build-on-builder:
