@@ -68,7 +68,11 @@ public class DataSource {
         maxPool = EBRConf.INSTANCE.getValue("report.datasource." + name + ".maxPool", 50);
         connectionCheckQuery = EBRConf.INSTANCE.getValue("report.datasource." + name + ".connectionCheckQuery", "");
 
-        initPool();
+        try {
+            initPool();
+        } catch (SQLException ex) {
+            logManager.error("ignoring connection error for startup", ex);
+        }
     }
 
     private void initPool() throws SQLException {
