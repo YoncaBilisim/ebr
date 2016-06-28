@@ -224,7 +224,10 @@ public class JasperReport extends BaseReport {
             rp.setName(param.getName());
             if (param.getDefaultValueExpression() != null && StringUtils.isNotBlank(param.getDefaultValueExpression().getText())) {
                 // FIXME alttaki değer script olabilir çalıştırılması gerekebilir
-                rp.setDefaultValue(Convert.to(StringUtils.strip(param.getDefaultValueExpression().getText(), "\""), param.getValueClass()));
+                String raw = StringUtils.strip(param.getDefaultValueExpression().getText(), "\"");
+                if(param.getValueClass().equals(Long.class))
+                    raw = StringUtils.stripEnd(raw, "Ll");
+                rp.setDefaultValue(Convert.to(raw, param.getValueClass()));
             }
             rp.setLabel(param.getName());
             ret.getReportParams().add(rp);
