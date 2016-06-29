@@ -75,6 +75,7 @@ import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimpleWriterExporterOutput;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,8 +91,6 @@ import org.springframework.stereotype.Component;
 public class JasperReport extends BaseReport {
 
     private static FLogManager logManager = FLogManager.getLogger(JasperReport.class);
-
-    private File file;
 
     @Autowired
     private ReportLogger reportLogger;
@@ -110,14 +109,18 @@ public class JasperReport extends BaseReport {
         return jrxmlFile;
     }
 
-    public static File compileIfRequired(File jrxmlFile) throws JRException {
+    public static File compileIfRequired(File jrxmlFile) {
         final String absolutePath = jrxmlFile.getAbsolutePath();
         synchronized(compileLocks) {
             if(!compileLocks.containsKey(absolutePath))
                 compileLocks.put(absolutePath, new Object());
         }
         synchronized(compileLocks.get(absolutePath)) {
-            return compile(jrxmlFile);
+            try {
+                return compile(jrxmlFile);
+            } catch (JRException ex) {
+                throw new ReportException(ex);
+            }
         }
     }
 
@@ -176,14 +179,20 @@ public class JasperReport extends BaseReport {
                 @Override
                 public void visitSubreport(JRSubreport subreport) {
                     String subReportName = subreport.getExpression().getText().replace("repo:", "");
+                    subReportName = StringUtils.strip(subReportName, "\"");
+                    //uzantı jrxml olduğuna emin olalım
+                    subReportName = FilenameUtils.removeExtension(subReportName) + ".jrxml";
                     File subReportFile = new File(jrxmlFile.getParentFile(), subReportName);
+                    //Sometimes the same subreport can be used multiple times, but
+                    //there is no need to compile multiple times
+                    // burada tam path bulmak gerekebilir
+                    File compiledSubReportFile = compileIfRequired(subReportFile.getAbsoluteFile());
+                    File destSubReportFile = new File(EBRConf.INSTANCE.getValue("report.subreport.path", "/home/eastblue/apache-tomcat-8.0.28/webapps/ebr/WEB-INF/classes"), compiledSubReportFile.getName());
                     try {
-                        //Sometimes the same subreport can be used multiple times, but
-                        //there is no need to compile multiple times
-                        // burada tam path bulmak gerekebilir
-                        compileIfRequired(subReportFile.getAbsoluteFile());
-                    } catch (JRException ex) {
-                        throw new RuntimeException(ex);
+                        // copy to classpoath
+                        FileUtils.copyFile(compiledSubReportFile, destSubReportFile);
+                    } catch (IOException ex) {
+                        throw new ReportException(ex);
                     }
                 }
 
@@ -207,15 +216,21 @@ public class JasperReport extends BaseReport {
         return jasperFile;
     }
 
-    public ReportDefinition loadDefinition(File file) throws IOException, JRException {
-        this.file = file;
+    @Override
+    public ReportDefinition loadDefinition(File file) throws IOException, ReportException {
+        setFile(file);
         String jsonFileName = file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(".jrxml")) + ".ebr.json";
         File jsonFile;
         jsonFile = new File(jsonFileName);
         final ReportDefinition ret = super.loadDefinition(file, jsonFile);
         ret.setReportType(ReportType.JASPER);
 
-        net.sf.jasperreports.engine.JasperReport jasperReport = (net.sf.jasperreports.engine.JasperReport) JRLoader.loadObject(compileIfRequired(file));
+        net.sf.jasperreports.engine.JasperReport jasperReport;
+        try {
+            jasperReport = (net.sf.jasperreports.engine.JasperReport) JRLoader.loadObject(compileIfRequired(file));
+        } catch (JRException ex) {
+            throw new ReportException(ex);
+        }
         for (JRParameter param : jasperReport.getParameters()) {
             if (!param.isForPrompting() || param.isSystemDefined()) {
                 continue;
@@ -234,20 +249,6 @@ public class JasperReport extends BaseReport {
         }
 
         return ret;
-    }
-
-    /**
-     * @return the file
-     */
-    public File getFile() {
-        return file;
-    }
-
-    /**
-     * @param file the file to set
-     */
-    public void setFile(File file) {
-        this.file = file;
     }
 
     @Override

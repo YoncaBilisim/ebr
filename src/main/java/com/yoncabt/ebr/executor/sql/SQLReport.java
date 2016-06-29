@@ -37,30 +37,15 @@ import org.springframework.stereotype.Component;
 @Scope(value = "request")
 public class SQLReport extends BaseReport {
 
-    private File file;
-
     @Autowired
     private ReportLogger reportLogger;
 
+    @Override
     public ReportDefinition loadDefinition(File file) throws IOException {
-        this.file = file;
+        setFile(file);
         String jsonFilePath = StringUtils.removeEnd(file.getAbsolutePath(), ".sql") + ".ebr.json";
         File jsonFile = new File(jsonFilePath);
         return super.loadDefinition(file, jsonFile);
-    }
-
-    /**
-     * @return the file
-     */
-    public File getFile() {
-        return file;
-    }
-
-    /**
-     * @param file the file to set
-     */
-    public void setFile(File file) {
-        this.file = file;
     }
 
     @Override

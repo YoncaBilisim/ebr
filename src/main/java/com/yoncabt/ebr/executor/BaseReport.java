@@ -36,6 +36,8 @@ public abstract class BaseReport {
     @Autowired
     private DataSourceManager dataSourceManager;
 
+    private File file;
+
     public BaseReport() {
     }
 
@@ -154,6 +156,21 @@ public abstract class BaseReport {
         return ret;
     }
 
+    /**
+     * @return the file
+     */
+    public File getFile() {
+        return file;
+    }
+
+    /**
+     * @param file the file to set
+     */
+    public void setFile(File file) {
+        this.file = file;
+    }
+
     public abstract void exportTo(ReportRequest request, ReportOutputFormat outputFormat, EBRConnection connection, ReportDefinition reportDefinition) throws ReportException, IOException;
 
+    public abstract ReportDefinition loadDefinition(File file) throws IOException;
 }

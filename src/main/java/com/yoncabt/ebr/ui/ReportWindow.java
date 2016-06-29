@@ -33,6 +33,7 @@ import com.yoncabt.ebr.ReportIDGenerator;
 import com.yoncabt.ebr.ReportOutputFormat;
 import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportService;
+import com.yoncabt.ebr.exceptions.ReportException;
 import com.yoncabt.ebr.executor.BaseReport;
 import com.yoncabt.ebr.executor.ReportTask;
 import com.yoncabt.ebr.executor.YoncaMailSender;
@@ -184,7 +185,7 @@ public class ReportWindow extends UI {
             } else {
                 Notification.show(frag + " raporu sisteminizde yok", Notification.Type.ERROR_MESSAGE);
             }
-        } catch (IOException | JRException ex) {
+        } catch (IOException | ReportException ex) {
             Notification.show("Hata", Notification.Type.ERROR_MESSAGE);
             Logger.getLogger(ReportWindow.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -373,10 +374,17 @@ public class ReportWindow extends UI {
                 continue;//gereksiz ama olduğu belli olsun
             } else if (file.isDirectory()) {
                 createMenuBar(menuItem, file);
-            } else if (file.getName().endsWith(".sql")) {
-                final SQLReport r = new SQLReport();
+            } else if (file.getName().endsWith(".sql") || file.getName().endsWith(".jrxml")) {
+                BaseReport r = file.getName().endsWith(".sql") ? new SQLReport() : new JasperReport();
                 context.getAutowireCapableBeanFactory().autowireBean(r);
-                String text = r.loadDefinition(file).getCaption();
+                String text;
+                try {
+                    text = r.loadDefinition(file).getCaption();
+                } catch (ReportException ex) {
+                    Notification.show("Hata", Notification.Type.ERROR_MESSAGE);
+                    Logger.getLogger(ReportWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    text = file.getName() + " ERROR";
+                }
                 menuItem.addItem(text, (MenuBar.MenuItem selectedItem) -> {
                     System.out.println(r.getFile() + " çalıştırılacak");
                     String frag = StringUtils.removeStart(r.getFile().getAbsolutePath(), EBRConf.INSTANCE.getValue(EBRParams.REPORTS_JRXML_PATH, ""));
