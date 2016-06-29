@@ -14,9 +14,9 @@ import java.util.Date;
  */
 public class VersionUtil {
 
-    public static final long WAR_DATE = 1000L * 1457871705;
+    public static final long WAR_DATE = 1000L * 1467210571;
     public static final Date START_DATE = new Date();
-    public static final String GIT_ID = "1c6d56ac465da78aa01f72a3163f1b213aaaac32";
+    public static final String GIT_ID = "ed68006a173444504f39272c0799b12f972e13f5";
 
     public static void print() {
         System.out.println("WAR_DATE :" + new Date(WAR_DATE));
