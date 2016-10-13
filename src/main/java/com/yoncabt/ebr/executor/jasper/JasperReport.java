@@ -368,7 +368,7 @@ public class JasperReport extends BaseReport {
                 break;
             case xml:
                 exporter = new JRXmlExporter();
-                output = new SimpleOutputStreamExporterOutput(exportReportFile);
+                output = new SimpleWriterExporterOutput(exportReportFile);
                 break;
             case docx:
                 exporter = new JRDocxExporter();
