@@ -20,6 +20,7 @@ import com.yoncabt.ebr.util.ResultSetSerializer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -74,6 +75,11 @@ public class SQLReport extends BaseReport {
                     }
                     case DOUBLE: {
                         Double value = Convert.to(request.getReportParams().get(reportParam.getName()), Double.class);
+                        p.set(reportParam.getName(), value);
+                        break;
+                    }
+                    case BIGDECIMAL: {
+                        BigDecimal value = Convert.to(request.getReportParams().get(reportParam.getName()), BigDecimal.class);
                         p.set(reportParam.getName(), value);
                         break;
                     }

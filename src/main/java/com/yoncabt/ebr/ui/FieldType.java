@@ -5,6 +5,7 @@
  */
 package com.yoncabt.ebr.ui;
 
+import java.math.BigDecimal;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -19,6 +20,7 @@ public enum FieldType {
     INTEGER(Integer.class),
     LONG(Long.class),
     DOUBLE(Double.class),
+    BIGDECIMAL(BigDecimal.class),
     DATE(java.util.Date.class);
 
     private Class javaType;

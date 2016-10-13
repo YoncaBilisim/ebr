@@ -5,6 +5,7 @@
  */
 package com.yoncabt.ebr.jdbcbridge;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -26,6 +27,7 @@ public class JDBCNamedParameters {
     private Map<String, Integer> intParams = new HashMap<>();
     private Map<String, Long> longParams = new HashMap<>();
     private Map<String, Double> doubleParams = new HashMap<>();
+    private Map<String, BigDecimal> bigDecimalParams = new HashMap<>();
     private Map<String, String> stringParams = new HashMap<>();
     private Map<String, Date> dateParams = new HashMap<>();
 
@@ -43,6 +45,10 @@ public class JDBCNamedParameters {
 
     public void set(String param, Double value) {
         doubleParams.put(param, value);
+    }
+
+    public void set(String param, BigDecimal value) {
+        bigDecimalParams.put(param, value);
     }
 
     public void set(String param, String value) {
@@ -74,6 +80,8 @@ public class JDBCNamedParameters {
                 ps.setLong(i + 1, longParams.get(paramName));
             } else if (doubleParams.containsKey(paramName)) {
                 ps.setDouble(i + 1, doubleParams.get(paramName));
+            } else if (bigDecimalParams.containsKey(paramName)) {
+                ps.setBigDecimal(i + 1, bigDecimalParams.get(paramName));
             } else if (stringParams.containsKey(paramName)) {
                 ps.setString(i + 1, stringParams.get(paramName));
             } else if (dateParams.containsKey(paramName)) {
