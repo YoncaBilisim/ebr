@@ -245,7 +245,7 @@ public enum EBRConf {
                 st.setString(1, key);
                 try (ResultSet res = st.executeQuery()) {
                     if (res.next()) {
-                        return res.getString("key");
+                        return res.getString("val");
                     }
                 }
             }
