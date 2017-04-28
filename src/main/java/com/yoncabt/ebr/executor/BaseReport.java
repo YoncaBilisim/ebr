@@ -88,7 +88,11 @@ public abstract class BaseReport {
         ret.setCaption(jsonObject.optString("title", "NOT ITTLE"));
         ret.setDataSource(jsonObject.optString("datasource", "default"));
         ret.setTextEncoding(jsonObject.optString("text-encoding", "utf-8"));
-        ret.setTextTemplate(jsonObject.optString("text-template", "SUITABLE"));
+        if (jsonObject.has("text-template")) {
+            ret.setTextTemplate(jsonObject.optString("text-template", "SUITABLE"));
+        } else{
+            ret.setTextTemplate("SUITABLE");
+        }
         if (jsonObject.has("fields")) {
             JSONArray fieldsArray = jsonObject.getJSONArray("fields");
             for (int i = 0; i < fieldsArray.length(); i++) {
