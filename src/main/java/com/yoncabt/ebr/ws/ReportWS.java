@@ -25,7 +25,6 @@ import com.yoncabt.ebr.ReportRequest;
 import com.yoncabt.ebr.ReportResponse;
 import com.yoncabt.ebr.ReportService;
 import com.yoncabt.ebr.executor.ReportTask;
-import com.yoncabt.ebr.executor.Status;
 import com.yoncabt.ebr.executor.definition.ReportDefinition;
 import net.sf.jasperreports.engine.JRException;
 
@@ -39,14 +38,14 @@ public class ReportWS {
     @Autowired
     private ReportService reportService;
 
-    private static FLogManager logManager = FLogManager.getLogger(ReportTask.class);
+    private static final FLogManager logManager = FLogManager.getLogger(ReportTask.class);
 
     @RequestMapping(
             value = {"/ws/1.0/dataSourceNames"},
             method = RequestMethod.GET,
             produces = "application/json")
     public ResponseEntity<List<String>> dataSourceNames() {
-        return ResponseEntity.ok(new ArrayList<String>(reportService.dataSourceNames()));
+        return ResponseEntity.ok(new ArrayList<>(reportService.dataSourceNames()));
     }
 
     @RequestMapping(
@@ -64,38 +63,38 @@ public class ReportWS {
     public ResponseEntity<ReportResponse> status(
             @PathVariable("requestId") String requestId
     ) {
-        Status status = reportService.status(requestId);
-        if (status == null) {//başlamamış
+        ReportTask detail = reportService.detail(requestId);
+        if (detail == null) {//başlamamış
             logManager.info("status query :YOK !!! " + requestId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         logManager.info("status query :" + requestId);
-        switch (status) {
+        switch (detail.getStatus()) {
             case WAIT:
-                logManager.info("status query :" + requestId + " :başlamış");
+                logManager.info(detail.getRequest().getReport() + " status query :" + requestId + " :başlamış");
                 return ResponseEntity.status(HttpStatus.CREATED).body(null);
 
             case RUN:
-                logManager.info("status query :" + requestId + " :devam ediyor");
+                logManager.info(detail.getRequest().getReport() + " status query :" + requestId + " :devam ediyor");
                 return ResponseEntity.status(HttpStatus.PROCESSING).body(null);
 
             case EXCEPTION:
-                logManager.info("status query :" + requestId + " :hata");
+                logManager.info(detail.getRequest().getReport() + " status query :" + requestId + " :hata");
                 return ResponseEntity.status(420).body(null);// 420 Method Failure
 
             case FINISH:
-                logManager.info("status query :" + requestId + " :bitmiş");
+                logManager.info(detail.getRequest().getReport() + " status query :" + requestId + " :bitmiş");
                 return ResponseEntity.status(HttpStatus.OK).body(null);
 
             case CANCEL:
-                logManager.info("status query :" + requestId + " :iptal");
+                logManager.info(detail.getRequest().getReport() + " status query :" + requestId + " :iptal");
                 return ResponseEntity.status(HttpStatus.OK).body(null);
 
             case SCHEDULED:
-                logManager.info("status query :" + requestId + " :başlamış");
+                logManager.info(detail.getRequest().getReport() + " status query :" + requestId + " :başlamış");
                 return ResponseEntity.status(HttpStatus.CREATED).body(null);
             default:
-                throw new IllegalArgumentException(status.name());
+                throw new IllegalArgumentException(detail.getStatus().name());
         }
     }
 
