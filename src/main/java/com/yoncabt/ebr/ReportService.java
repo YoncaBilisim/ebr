@@ -28,8 +28,11 @@ import com.yoncabt.ebr.executor.jasper.JasperReport;
 import com.yoncabt.ebr.executor.sql.SQLReport;
 import com.yoncabt.ebr.jdbcbridge.pool.DataSourceManager;
 import com.yoncabt.ebr.logger.ReportLogger;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import net.sf.jasperreports.engine.JRException;
+import org.apache.commons.collections.MapUtils;
 
 @Component
 public class ReportService {
@@ -150,6 +153,14 @@ public class ReportService {
         }
         if (FilenameUtils.getExtension(req.getReport()).isEmpty()) {
             req.setReport(req.getReport() + ".jrxml");
+        }
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(baos);
+            MapUtils.debugPrint(ps, req.getUuid(), req.getReportParams());
+            logManager.info(req.getUuid() + " parametreleri\n" + baos.toString("utf-8"));
+        } catch (Exception e) {
+            logManager.error(e);
         }
         task.setRequest(req);
         requestList.add(task);
