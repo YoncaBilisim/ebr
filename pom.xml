@@ -78,7 +78,7 @@
             <artifactId>jasperreports</artifactId>
             <version>6.1.1</version>
         </dependency>
-		<dependency>
+        <dependency>
             <groupId>net.sourceforge.barbecue</groupId>
             <artifactId>barbecue</artifactId>
             <version>1.5-beta1</version>
@@ -118,6 +118,11 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ar.com.fdvs</groupId>
+            <artifactId>DynamicJasper-core-fonts</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 
